@@ -9,7 +9,7 @@ import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
 import { getLanIps } from '../tls.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 const router = express.Router();
 
@@ -21,11 +21,16 @@ router.get('/network', (req, res) => {
   const port = c.server.port;
   const manifestUrls = [`http://${primaryIp}:${port}/manifest.json`,
     ...ips.slice(1).map((ip) => `http://${ip}:${port}/manifest.json`)];
+  const localUrl = `http://127.0.0.1:${port}/manifest.json`;
   res.json({
     version: VERSION,
     lanIps: ips,
     port,
     https: c.server.https,
+    // Para instalar en el Stremio de ESTE MISMO PC (evita restricciones de http).
+    localUrl,
+    localDeepLink: `stremio://127.0.0.1:${port}/manifest.json`,
+    // Para la TV u otros dispositivos de la red.
     manifestUrl: manifestUrls[0],
     manifestUrls,
     // Deep link que abre Stremio e instala el addon directamente.

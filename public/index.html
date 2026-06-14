@@ -46,14 +46,27 @@
       <p class="hint">Usa esta URL en Stremio (PC o Smart TV). Para la TV usa la IP, no <code>localhost</code>.</p>
 
       <div class="card">
-        <h3>URL del manifest</h3>
+        <h3>① En este mismo PC (app de Stremio en Windows)</h3>
+        <p class="hint small">Usa esta URL <b>localhost</b> en el Stremio de este ordenador. Evita el error «url not fetched».</p>
+        <div class="search-box">
+          <input type="text" id="localUrl" readonly />
+          <button id="copyLocal" class="mini-btn">📋 Copiar</button>
+        </div>
+        <div class="result-actions" style="margin-top:12px">
+          <a id="localDeepLink" class="mini-btn" href="#">▶️ Instalar aquí (abre Stremio)</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>② En la Smart TV u otros dispositivos de la red</h3>
+        <p class="hint small">Usa esta URL con la <b>IP</b> de este PC (no funciona «localhost» desde la TV).</p>
         <div class="search-box">
           <input type="text" id="manifestUrl" readonly />
           <button id="copyManifest" class="mini-btn">📋 Copiar</button>
         </div>
         <div class="result-actions" style="margin-top:12px">
-          <a id="deepLink" class="mini-btn" href="#">▶️ Instalar en Stremio (app)</a>
-          <a id="webInstall" class="mini-btn" href="#" target="_blank">🌐 Instalar en Stremio Web</a>
+          <a id="deepLink" class="mini-btn" href="#">▶️ Instalar (abre Stremio)</a>
+          <a id="webInstall" class="mini-btn" href="#" target="_blank">🌐 Stremio Web</a>
         </div>
         <p id="netInfo" class="hint small" style="margin-top:12px"></p>
       </div>

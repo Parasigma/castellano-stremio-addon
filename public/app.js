@@ -429,6 +429,8 @@ async function loadNetwork() {
   try {
     const r = await fetch('/api/network');
     const n = await r.json();
+    document.getElementById('localUrl').value = n.localUrl;
+    document.getElementById('localDeepLink').href = n.localDeepLink;
     document.getElementById('manifestUrl').value = n.manifestUrl;
     document.getElementById('deepLink').href = n.deepLink;
     document.getElementById('webInstall').href = n.webInstall;
@@ -448,6 +450,7 @@ function copyFrom(inputId, btn) {
     setTimeout(() => { btn.textContent = old; }, 1500);
   });
 }
+document.getElementById('copyLocal').addEventListener('click', (e) => copyFrom('localUrl', e.target));
 document.getElementById('copyManifest').addEventListener('click', (e) => copyFrom('manifestUrl', e.target));
 document.getElementById('copyFirewall').addEventListener('click', (e) => copyFrom('firewallCmd', e.target));
 

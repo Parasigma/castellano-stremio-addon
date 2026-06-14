@@ -36,15 +36,14 @@ export class Jackett {
   }
 
   /**
-   * Busca torrents. type: 'movie' | 'series' | 'search'.
+   * Busca torrents por texto plano (t=search). Usamos búsqueda de texto en lugar
+   * de tvsearch/movie porque la mayoría de trackers españoles (Cardigann) NO
+   * soportan tvsearch ni imdbid; el episodio/temporada va en el texto de la
+   * consulta y luego se filtra analizando el título.
    * @returns {Promise<Array>} torrents normalizados (ver torznab.js)
    */
-  async search(query, { type = 'search', season, episode, imdbId } = {}) {
-    const params = { t: type === 'movie' ? 'movie' : type === 'series' ? 'tvsearch' : 'search', q: query };
-    if (season != null) params.season = season;
-    if (episode != null) params.ep = episode;
-    if (imdbId) params.imdbid = imdbId.replace('tt', '');
-    const res = await request(this.torznabUrl(params), { timeout: 25000 });
+  async search(query) {
+    const res = await request(this.torznabUrl({ t: 'search', q: query }), { timeout: 25000 });
     if (!res.ok) throw new Error(`Búsqueda en Jackett falló (HTTP ${res.status})`);
     const xml = await res.text();
     return parseTorznab(xml, 'jackett');

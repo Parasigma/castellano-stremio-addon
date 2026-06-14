@@ -8,6 +8,7 @@ import { getMeta } from './meta.js';
 import { parseTitle } from './parse.js';
 import { detectLanguage } from './language.js';
 import { rankTorrents } from './rank.js';
+import { resolveInfoHash } from './torrentfile.js';
 
 /** Construye las consultas de texto a lanzar contra cada fuente. */
 function buildQueries(type, name, year, season, episode) {
@@ -46,20 +47,38 @@ async function fromPublic(queries) {
   return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
 }
 
-/** Quita duplicados por infohash quedándose con el de más seeders. */
-function dedupe(torrents) {
+// Clave de deduplicado: infohash si lo hay, si no el enlace o el título.
+const keyOf = (t) => t.infoHash || t.downloadUrl || t.title;
+
+/** Quita duplicados por clave quedándose con el de más seeders. */
+function dedupeBy(torrents) {
   const map = new Map();
+  let n = 0;
   for (const t of torrents) {
-    if (!t.infoHash) continue;
-    const prev = map.get(t.infoHash);
-    if (!prev || (t.seeders || 0) > (prev.seeders || 0)) map.set(t.infoHash, t);
+    const key = keyOf(t) || `__${n++}`;
+    const prev = map.get(key);
+    if (!prev || (t.seeders || 0) > (prev.seeders || 0)) map.set(key, t);
   }
   return [...map.values()];
+}
+
+/** Descarga el .torrent de los resultados sin infohash para obtenerlo. */
+async function enrichInfoHashes(torrents) {
+  const need = torrents.filter((t) => !t.infoHash && t.downloadUrl).slice(0, 50);
+  await Promise.allSettled(need.map(async (t) => {
+    const info = await resolveInfoHash(t.downloadUrl);
+    if (info) {
+      t.infoHash = info.infoHash;
+      if (!t.magnet) t.magnet = info.magnet;
+    }
+  }));
+  return torrents;
 }
 
 /** Filtra por episodio (series), CAM y mínimo de seeders. */
 function filterTorrents(torrents, { type, season, episode }, ranking) {
   return torrents.filter((t) => {
+    if (!t.infoHash && !t.magnet) return false; // sin forma de reproducirlo
     if (ranking.excludeCam && t.parsed.source === 'CAM') return false;
     if ((t.seeders || 0) < (ranking.minSeeders || 0)) return false;
 
@@ -111,9 +130,15 @@ async function gatherFromSources(queries, { type = 'search', season, episode, im
   return settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
 }
 
-/** Dedupe + análisis (parse + idioma) de una lista de torrents. */
-function analyze(torrents) {
-  return dedupe(torrents).map((t) => {
+/**
+ * Pre-dedupe + resolver infohashes (.torrent) + dedupe final + análisis
+ * (parse + idioma). Async porque puede descargar ficheros .torrent.
+ */
+async function enrichAndAnalyze(torrents) {
+  torrents = dedupeBy(torrents);            // pre-dedupe (evita descargar repetidos)
+  torrents = await enrichInfoHashes(torrents);
+  torrents = dedupeBy(torrents);            // dedupe final (fusiona por infohash)
+  return torrents.map((t) => {
     const parsed = parseTitle(t.title);
     parsed.language = detectLanguage(t.title);
     return { ...t, parsed };
@@ -131,7 +156,7 @@ export async function searchStreams({ type, imdbId, season, episode }) {
   if (!name) return { meta: null, torrents: [] };
 
   const queries = buildQueries(type, name, meta.year, season, episode);
-  let torrents = analyze(await gatherFromSources(queries, { type, season, episode, imdbId }));
+  let torrents = await enrichAndAnalyze(await gatherFromSources(queries, { type, season, episode, imdbId }));
 
   torrents = filterTorrents(torrents, { type, season, episode }, config.ranking);
   await checkCache(torrents);
@@ -152,10 +177,11 @@ export async function manualSearch(query) {
 
   // Una consulta tal cual + otra sesgada a castellano.
   const queries = [...new Set([clean, `${clean} castellano`])];
-  let torrents = analyze(await gatherFromSources(queries, { type: 'search' }));
+  let torrents = await enrichAndAnalyze(await gatherFromSources(queries, { type: 'search' }));
 
   // Solo aplicamos CAM y mínimo de seeders (sin filtro de temporada/episodio).
   torrents = torrents.filter((t) => {
+    if (!t.infoHash && !t.magnet) return false;
     if (config.ranking.excludeCam && t.parsed.source === 'CAM') return false;
     if ((t.seeders || 0) < (config.ranking.minSeeders || 0)) return false;
     return true;

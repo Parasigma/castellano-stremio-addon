@@ -12,7 +12,7 @@ const router = express.Router();
 
 const MANIFEST = {
   id: 'org.castellano.debrid.addon',
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'Castellano (Debrid)',
   description: 'Addon centrado en castellano (doblado y VOSE) con Real Debrid, '
     + 'TorBox e indexadores Jackett/Prowlarr. Prioriza el español de España.',

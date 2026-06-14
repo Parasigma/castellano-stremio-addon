@@ -218,8 +218,14 @@ Muchos sitios españoles están tras Cloudflare. Para esos necesitas
 En el dashboard → pestaña **📺 Instalar en Stremio** verás la URL del manifest
 (con la IP de tu PC) y botones para copiar/instalar.
 
-**En el PC:** pulsa **▶️ Instalar en Stremio (app)**, o ve a *Addons* en Stremio,
-pega la URL `http://TU-IP:7000/manifest.json` y pulsa **Install**.
+**En el PC (app de Windows):** usa la URL **localhost**
+`http://127.0.0.1:7000/manifest.json` (sección ① del panel). Pulsa **▶️ Instalar
+aquí** o pégala en *Addons* de Stremio y **Install**.
+
+> ⚠️ Si pegas la URL con la **IP** (`http://192.168.x.x:7000/...`) en el Stremio
+> del **mismo PC**, puede dar **«url not fetched»** porque la app exige HTTPS para
+> direcciones que no sean `localhost`. Para el mismo PC usa siempre `127.0.0.1`;
+> la URL con IP es solo para la **TV/otros dispositivos**.
 
 **En la Smart TV:**
 
@@ -307,6 +313,23 @@ La carpeta de descargas se ajusta en **Descargas → Carpeta de descargas**.
 - Añade **más trackers españoles** en Jackett.
 - Si fallan por Cloudflare, instala **FlareSolverr** (ver 3.2).
 - En *Idioma y calidad*, deja **Castellano** arriba del todo.
+
+### Stremio dice «url not fetched» / no carga el addon
+- **En el mismo PC:** usa la URL **localhost** `http://127.0.0.1:7000/manifest.json`
+  (sección ① del panel «Instalar»), no la de la IP. La app de Stremio exige HTTPS
+  para direcciones que no sean `localhost`, por eso la IP por http falla en el
+  propio PC.
+- **En Stremio Web** (web.stremio.com, que va por HTTPS) no puedes cargar un addon
+  por http: usa la app de escritorio, o activa el HTTPS opcional, o instala el
+  addon en el PC e inicia sesión con la misma cuenta en la TV (se sincroniza).
+- Comprueba que el addon está **arrancado** y que abre `http://127.0.0.1:7000`.
+
+### El buscador no encuentra nada aunque Jackett esté en verde
+- «Probar conexión» en verde solo significa que el addon **alcanza** Jackett, no
+  que Jackett tenga trackers. Abre <http://127.0.0.1:9117> y comprueba que tienes
+  **indexadores añadidos** y que pasan el **Test**.
+- Asegúrate de estar en la **última versión** del addon (ejecuta `actualizar.bat`):
+  versiones antiguas no resolvían los `.torrent` de los trackers españoles.
 
 ### La Smart TV no conecta
 1. TV y PC en la **misma red**.
