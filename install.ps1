@@ -1,4 +1,4 @@
-# Instalador automático del Addon Castellano para Stremio (Windows).
+﻿# Instalador automático del Addon Castellano para Stremio (Windows).
 # Instala: Node.js, Git, Jackett, FlareSolverr y la propia app, y deja todo listo.
 #
 # Uso rápido en un PC nuevo (pega esto en PowerShell):
