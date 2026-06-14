@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Addon Castellano · Configuración</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">🎬</span>
+      <div>
+        <h1>Addon Castellano para Stremio</h1>
+        <p class="sub">Panel de configuración · <span id="version">v0.1.0</span></p>
+      </div>
+    </div>
+    <div id="statusBar" class="status-bar"></div>
+  </header>
+
+  <main>
+    <nav class="tabs">
+      <button class="tab active" data-tab="buscador">🔎 Buscador</button>
+      <button class="tab" data-tab="instalar">📺 Instalar en Stremio</button>
+      <button class="tab" data-tab="debrid">Servidores debrid</button>
+      <button class="tab" data-tab="indexers">Indexadores</button>
+      <button class="tab" data-tab="ranking">Idioma y calidad</button>
+      <button class="tab" data-tab="download">Descargas</button>
+    </nav>
+
+    <!-- BUSCADOR -->
+    <section class="panel active" data-panel="buscador">
+      <h2>Buscador manual de torrents</h2>
+      <p class="hint">Busca a mano en tus indexadores. Los resultados se ordenan con el castellano arriba.</p>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Ej: Modern Family temporada 1" />
+        <button id="searchBtn" class="primary">Buscar</button>
+      </div>
+      <p id="searchInfo" class="hint small"></p>
+      <div id="searchResults" class="results"></div>
+    </section>
+
+    <!-- INSTALAR -->
+    <section class="panel" data-panel="instalar">
+      <h2>Instalar en Stremio</h2>
+      <p class="hint">Usa esta URL en Stremio (PC o Smart TV). Para la TV usa la IP, no <code>localhost</code>.</p>
+
+      <div class="card">
+        <h3>URL del manifest</h3>
+        <div class="search-box">
+          <input type="text" id="manifestUrl" readonly />
+          <button id="copyManifest" class="mini-btn">📋 Copiar</button>
+        </div>
+        <div class="result-actions" style="margin-top:12px">
+          <a id="deepLink" class="mini-btn" href="#">▶️ Instalar en Stremio (app)</a>
+          <a id="webInstall" class="mini-btn" href="#" target="_blank">🌐 Instalar en Stremio Web</a>
+        </div>
+        <p id="netInfo" class="hint small" style="margin-top:12px"></p>
+      </div>
+
+      <div class="card">
+        <h3>Firewall de Windows</h3>
+        <p class="hint small">Si la TV no conecta, abre el puerto ejecutando esto en PowerShell <b>como administrador</b>:</p>
+        <div class="search-box">
+          <input type="text" id="firewallCmd" readonly />
+          <button id="copyFirewall" class="mini-btn">📋 Copiar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>HTTPS (opcional, avanzado)</h3>
+        <label class="switch-row">
+          <input type="checkbox" id="https_enabled" />
+          <span>Activar HTTPS con certificado autofirmado</span>
+        </label>
+        <p class="hint small">Útil solo para el reproductor web de Stremio en este PC. Las Smart TV usan HTTP. Requiere reiniciar el addon tras guardar.</p>
+      </div>
+    </section>
+
+    <!-- DEBRID -->
+    <section class="panel" data-panel="debrid">
+      <h2>Servidores de pago (debrid)</h2>
+      <p class="hint">Pega aquí los tokens de tus cuentas. Se guardan cifrados en tu PC.</p>
+
+      <div class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="rd_enabled" />
+          <span>Real Debrid</span>
+        </label>
+        <label>API Token
+          <input type="password" id="rd_token" placeholder="Pega tu token de Real Debrid" autocomplete="off" />
+        </label>
+        <p class="hint small">Consíguelo en <code>real-debrid.com/apitoken</code></p>
+        <div class="test-row">
+          <button class="test-btn" data-service="realdebrid">Probar conexión</button>
+          <span class="test-msg" data-msg="realdebrid"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="tb_enabled" />
+          <span>TorBox</span>
+        </label>
+        <label>API Token
+          <input type="password" id="tb_token" placeholder="Pega tu token de TorBox" autocomplete="off" />
+        </label>
+        <p class="hint small">Consíguelo en <code>torbox.app</code> → Settings → API</p>
+        <div class="test-row">
+          <button class="test-btn" data-service="torbox">Probar conexión</button>
+          <span class="test-msg" data-msg="torbox"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- INDEXERS -->
+    <section class="panel" data-panel="indexers">
+      <h2>Indexadores (de dónde se buscan los torrents)</h2>
+      <p class="hint">Jackett/Prowlarr conectan con trackers españoles. Recomendado para castellano.</p>
+
+      <div class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="jk_enabled" />
+          <span>Jackett</span>
+        </label>
+        <label>URL
+          <input type="text" id="jk_url" placeholder="http://127.0.0.1:9117" />
+        </label>
+        <label>API Key
+          <input type="password" id="jk_apiKey" placeholder="API Key de Jackett" autocomplete="off" />
+        </label>
+        <div class="test-row">
+          <button class="test-btn" data-service="jackett">Probar conexión</button>
+          <span class="test-msg" data-msg="jackett"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="pw_enabled" />
+          <span>Prowlarr</span>
+        </label>
+        <label>URL
+          <input type="text" id="pw_url" placeholder="http://127.0.0.1:9696" />
+        </label>
+        <label>API Key
+          <input type="password" id="pw_apiKey" placeholder="API Key de Prowlarr" autocomplete="off" />
+        </label>
+        <div class="test-row">
+          <button class="test-btn" data-service="prowlarr">Probar conexión</button>
+          <span class="test-msg" data-msg="prowlarr"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="pub_enabled" />
+          <span>Fuentes públicas (apoyo, mayormente inglés)</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- RANKING -->
+    <section class="panel" data-panel="ranking">
+      <h2>Prioridad de idioma y calidad</h2>
+      <p class="hint">Arrastra para reordenar. Lo de arriba se muestra primero en Stremio.</p>
+
+      <div class="card">
+        <h3>Idioma (el castellano manda)</h3>
+        <ul id="languageList" class="sortable"></ul>
+      </div>
+
+      <div class="card">
+        <h3>Calidad</h3>
+        <ul id="qualityList" class="sortable"></ul>
+      </div>
+
+      <div class="card">
+        <label class="switch-row">
+          <input type="checkbox" id="excludeCam" />
+          <span>Descartar CAM / TS / SCREENER</span>
+        </label>
+        <label>Mínimo de seeders
+          <input type="number" id="minSeeders" min="0" value="0" />
+        </label>
+        <label>Máximo de resultados por búsqueda
+          <input type="number" id="maxResults" min="1" value="30" />
+        </label>
+      </div>
+    </section>
+
+    <!-- DOWNLOAD -->
+    <section class="panel" data-panel="download">
+      <h2>Descargas locales</h2>
+      <p class="hint">Descarga torrents a tu PC y reprodúcelos en la TV sin pasar por debrid.</p>
+
+      <div class="card">
+        <label>Carpeta de descargas
+          <input type="text" id="dl_path" placeholder="C:\Users\...\Downloads\stremio" />
+        </label>
+        <label>Descargas simultáneas máximas
+          <input type="number" id="dl_maxConcurrent" min="1" value="3" />
+        </label>
+        <div class="search-box" style="margin-top:8px">
+          <input type="text" id="dl_magnet" placeholder="Pega aquí un magnet para descargar" />
+          <button id="dl_addBtn" class="primary">Descargar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Descargas en curso <button id="dl_refresh" class="mini-btn" style="float:right">🔄 Actualizar</button></h3>
+        <div id="downloadsList" class="results"><p class="hint small">Sin descargas activas.</p></div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="saveBtn" class="primary">Guardar configuración</button>
+      <span id="saveMsg" class="save-msg"></span>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
