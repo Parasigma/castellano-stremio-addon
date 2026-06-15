@@ -309,6 +309,7 @@ async function handleAction(act, r, btn, msg) {
       if (act === 'torbox' || act === 'realdebrid') {
         const prov = act === 'torbox' ? 'TorBox' : 'Real Debrid';
         msg.textContent = `✓ Enviado a ${prov}. Mira el progreso aquí abajo ↓`;
+        if (r.infoHash) sentToDebrid.add(r.infoHash.toLowerCase());
         startStatusPolling(); // empieza a mostrar el progreso y cuándo se cachea
       } else if (act === 'download') {
         msg.textContent = '✓ Descarga iniciada. Mira el progreso en la pestaña "Descargas".';
@@ -331,6 +332,10 @@ function escapeHtml(s) {
   ));
 }
 
+// Infohashes que el usuario ha enviado a debrid en esta sesión (para dar feedback
+// aunque el debrid todavía no los liste).
+const sentToDebrid = new Set();
+
 // Consulta el progreso en los debrid y actualiza cada resultado (badge + estado).
 async function refreshDebridStatus() {
   let map = {};
@@ -345,7 +350,13 @@ async function refreshDebridStatus() {
     const st = map[ih];
     const statusEl = card.querySelector('.cache-status');
     const badge = card.querySelector('.cache-badge');
-    if (!st) return; // no está (todavía) en ningún debrid
+    if (!st) {
+      // Aún no aparece en el debrid; si lo acabamos de enviar, avisamos.
+      if (sentToDebrid.has(ih) && statusEl) {
+        statusEl.textContent = '⏳ Añadido al debrid, esperando a que empiece a descargar… (suele tardar; con pocos seeders va lento)';
+      }
+      return;
+    }
     if (st.ready) {
       if (statusEl) statusEl.innerHTML = '<span style="color:var(--ok)">✅ Cacheado — ya se puede ver en Stremio</span>';
       if (badge) { badge.className = 'badge cache-badge cached'; badge.textContent = '⚡ Cacheado'; }

@@ -96,11 +96,12 @@ export class TorBox {
     return (body && body.data) || body; // URL directa
   }
 
-  /** Lista los torrents de la cuenta. */
+  /** Lista los torrents de la cuenta (bypass_cache para datos frescos). */
   async myList() {
-    const { ok, status, body } = await requestJson(`${BASE}/torrents/mylist`, {
-      headers: this.headers(),
-    });
+    const { ok, status, body } = await requestJson(
+      `${BASE}/torrents/mylist?bypass_cache=true`,
+      { headers: this.headers() },
+    );
     if (!ok) throw new Error(`mylist falló (HTTP ${status})`);
     return (body && body.data) || [];
   }
