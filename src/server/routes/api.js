@@ -7,7 +7,7 @@ import { manualSearch } from '../../engine/search.js';
 import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
-import { getLanIps } from '../tls.js';
+import { getLanIps, getNetworkInterfaces } from '../tls.js';
 
 export const VERSION = '1.1.0';
 
@@ -25,6 +25,7 @@ router.get('/network', (req, res) => {
   res.json({
     version: VERSION,
     lanIps: ips,
+    interfaces: getNetworkInterfaces(),
     port,
     https: c.server.https,
     // Para instalar en el Stremio de ESTE MISMO PC (evita restricciones de http).

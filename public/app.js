@@ -446,9 +446,15 @@ async function loadNetwork() {
     document.getElementById('deepLink').href = n.deepLink;
     document.getElementById('webInstall').href = n.webInstall;
     document.getElementById('firewallCmd').value = n.firewallCmd;
-    const extra = n.lanIps.length > 1 ? ` · Otras IPs: ${n.lanIps.slice(1).join(', ')}` : '';
-    document.getElementById('netInfo').textContent =
-      `Puerto ${n.port} · IP detectada: ${n.lanIps[0] || '—'}${extra}`;
+    const ifs = n.interfaces || [];
+    const lines = ifs.map((it, idx) => {
+      const tag = it.virtual
+        ? ' <span style="color:var(--muted)">— adaptador virtual, IGNORAR</span>'
+        : (idx === 0 ? ' <span style="color:var(--ok)">— ✅ usa esta (Wi-Fi/red)</span>' : '');
+      return `${escapeHtml(it.name)}: <b>${it.address}</b>${tag}`;
+    }).join('<br>');
+    document.getElementById('netInfo').innerHTML =
+      `Puerto ${n.port}. IPs detectadas en este PC:<br>${lines || '—'}`;
   } catch (err) {
     document.getElementById('netInfo').textContent = 'No se pudo cargar la info de red: ' + err.message;
   }

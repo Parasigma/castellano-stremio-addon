@@ -32,13 +32,34 @@ export async function getCertificate() {
   return cert;
 }
 
-export function getLanIps() {
+// Adaptadores que NO son la red real (virtuales, contenedores, VPN, APIPA).
+const VIRTUAL_RE = /(vEthernet|Virtual|VMware|VirtualBox|Hyper-V|Loopback|Bluetooth|Default Switch|WSL|Docker|TAP|Tailscale|ZeroTier|Npcap)/i;
+
+function ifaceScore(i) {
+  let s = 0;
+  if (!i.virtual) s += 100;
+  if (/Wi-?Fi|Wireless|inal[aá]mbric/i.test(i.name)) s += 40;
+  else if (/Ethernet/i.test(i.name) && !i.virtual) s += 30;
+  if (i.address.startsWith('192.168.')) s += 20;
+  else if (i.address.startsWith('10.')) s += 10;
+  else if (/^172\.(1[6-9]|2\d|3[01])\./.test(i.address)) s += 3;
+  return s;
+}
+
+/** Lista de adaptadores IPv4 reales, ordenados (mejor candidato primero). */
+export function getNetworkInterfaces() {
   const ifaces = os.networkInterfaces();
-  const ips = [];
+  const out = [];
   for (const name of Object.keys(ifaces)) {
     for (const iface of ifaces[name] || []) {
-      if (iface.family === 'IPv4' && !iface.internal) ips.push(iface.address);
+      if (iface.family !== 'IPv4' || iface.internal) continue;
+      if (iface.address.startsWith('169.254.')) continue; // APIPA (sin red)
+      out.push({ name, address: iface.address, virtual: VIRTUAL_RE.test(name) });
     }
   }
-  return ips;
+  return out.sort((a, b) => ifaceScore(b) - ifaceScore(a));
+}
+
+export function getLanIps() {
+  return getNetworkInterfaces().map((i) => i.address);
 }
