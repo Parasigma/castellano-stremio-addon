@@ -66,6 +66,11 @@ function Find-Npm {
 }
 
 # --- 4. Descargar / actualizar el código ---------------------------------
+# Evita el error "dubious ownership": como el instalador corre elevado, la
+# carpeta clonada queda en propiedad de Administradores; marcamos los repos como
+# seguros para que git pull funcione luego al ejecutarse como usuario normal.
+git config --global --add safe.directory '*' 2>$null
+
 # Si se ejecuta dentro del propio repo, instala ahí; si no, clona.
 $here = $PSScriptRoot
 if ($here -and (Test-Path (Join-Path $here 'package.json')) -and (Test-Path (Join-Path $here 'src\index.js'))) {

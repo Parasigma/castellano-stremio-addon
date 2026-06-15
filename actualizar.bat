@@ -25,6 +25,8 @@ echo   Actualizando el Addon Castellano para Stremio
 echo ============================================================
 echo.
 echo [1/2] Descargando cambios desde GitHub...
+REM Evitar el error "dubious ownership" si la carpeta fue creada como administrador.
+git config --global --add safe.directory "*" >nul 2>&1
 git pull --ff-only
 if errorlevel 1 (
   echo.
