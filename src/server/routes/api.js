@@ -195,6 +195,52 @@ router.post('/debrid/add', async (req, res) => {
   }
 });
 
+// Estado/progreso de los torrents en los debrid, indexado por infohash.
+// Lo usa el buscador para mostrar el progreso y pasar de "No cacheado" a "Cacheado".
+router.get('/debrid/status', async (req, res) => {
+  const c = loadConfig();
+  const byHash = {};
+
+  if (c.debrid.torbox.enabled && getSecret('debrid.torbox.token')) {
+    try {
+      const list = await getTorBox().myList();
+      for (const t of Array.isArray(list) ? list : []) {
+        const h = (t.hash || '').toLowerCase();
+        if (!h) continue;
+        const ready = !!t.download_finished || ['completed', 'cached', 'uploading'].includes(t.download_state);
+        byHash[h] = {
+          provider: 'TorBox',
+          progress: Math.round((Number(t.progress) || 0) * 100),
+          ready,
+          state: t.download_state || (ready ? 'completado' : 'descargando'),
+          speed: Number(t.download_speed) || 0,
+          eta: Number(t.eta) || 0,
+        };
+      }
+    } catch { /* ignora */ }
+  }
+
+  if (c.debrid.realdebrid.enabled && getSecret('debrid.realdebrid.token')) {
+    try {
+      const list = await getRealDebrid().listTorrents();
+      for (const t of list) {
+        const h = (t.hash || '').toLowerCase();
+        if (!h || byHash[h]) continue;
+        byHash[h] = {
+          provider: 'Real Debrid',
+          progress: Math.round(Number(t.progress) || 0),
+          ready: t.status === 'downloaded',
+          state: t.status || 'descargando',
+          speed: Number(t.speed) || 0,
+          eta: 0,
+        };
+      }
+    } catch { /* ignora */ }
+  }
+
+  res.json({ ok: true, byHash });
+});
+
 // --- Descargas locales ---------------------------------------------------
 
 // Inicia una descarga al PC.

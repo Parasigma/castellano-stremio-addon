@@ -253,6 +253,7 @@ function fmtSize(bytes) {
 function resultCard(r) {
   const el = document.createElement('div');
   el.className = 'result';
+  el.dataset.infohash = (r.infoHash || '').toLowerCase();
 
   const badges = [];
   badges.push(`<span class="badge lang-${r.languageCategory}">${r.languageLabel}</span>`);
@@ -263,13 +264,15 @@ function resultCard(r) {
   if (r.isPack) badges.push(`<span class="badge">📦 Pack T${r.season ?? ''}</span>`);
   if (r.size) badges.push(`<span class="badge">${fmtSize(r.size)}</span>`);
   badges.push(`<span class="badge">👤 ${r.seeders}</span>`);
-  if (r.cached === true) badges.push(`<span class="badge cached">⚡ Cacheado</span>`);
-  else if (r.cached === false) badges.push(`<span class="badge notcached">⬇️ No cacheado</span>`);
+  const cc = r.cached === true ? 'cached' : (r.cached === false ? 'notcached' : '');
+  const ct = r.cached === true ? '⚡ Cacheado' : (r.cached === false ? '⬇️ No cacheado' : '❔ cache?');
+  badges.push(`<span class="badge cache-badge ${cc}">${ct}</span>`);
   badges.push(`<span class="badge">📡 ${r.indexer}</span>`);
 
   el.innerHTML = `
     <div class="result-title">${escapeHtml(r.title)}</div>
     <div class="result-meta">${badges.join('')}</div>
+    <div class="cache-status hint small"></div>
     <div class="result-actions">
       <button class="mini-btn" data-act="torbox">⬆️ Enviar a TorBox</button>
       <button class="mini-btn" data-act="realdebrid">⬆️ Enviar a Real Debrid</button>
@@ -305,7 +308,8 @@ async function handleAction(act, r, btn, msg) {
     if (data.ok) {
       if (act === 'torbox' || act === 'realdebrid') {
         const prov = act === 'torbox' ? 'TorBox' : 'Real Debrid';
-        msg.textContent = `✓ Enviado a ${prov}. Cacheándose… aparecerá como ⚡ en Stremio al abrir ese título (ver "¿Dónde veo el contenido?" arriba).`;
+        msg.textContent = `✓ Enviado a ${prov}. Mira el progreso aquí abajo ↓`;
+        startStatusPolling(); // empieza a mostrar el progreso y cuándo se cachea
       } else if (act === 'download') {
         msg.textContent = '✓ Descarga iniciada. Mira el progreso en la pestaña "Descargas".';
       } else {
@@ -325,6 +329,47 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
+}
+
+// Consulta el progreso en los debrid y actualiza cada resultado (badge + estado).
+async function refreshDebridStatus() {
+  let map = {};
+  try {
+    const r = await fetch('/api/debrid/status');
+    const d = await r.json();
+    map = d.byHash || {};
+  } catch { return; }
+  document.querySelectorAll('#searchResults .result[data-infohash]').forEach((card) => {
+    const ih = card.dataset.infohash;
+    if (!ih) return;
+    const st = map[ih];
+    const statusEl = card.querySelector('.cache-status');
+    const badge = card.querySelector('.cache-badge');
+    if (!st) return; // no está (todavía) en ningún debrid
+    if (st.ready) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--ok)">✅ Cacheado — ya se puede ver en Stremio</span>';
+      if (badge) { badge.className = 'badge cache-badge cached'; badge.textContent = '⚡ Cacheado'; }
+    } else {
+      const eta = st.eta > 0 ? ` · ~${Math.round(st.eta / 60)} min` : '';
+      const spd = st.speed > 0 ? ` · ${(st.speed / 1048576).toFixed(1)} MB/s` : '';
+      if (statusEl) statusEl.textContent = `⏳ ${st.provider}: ${st.progress}% (${st.state})${spd}${eta}`;
+      if (badge) { badge.className = 'badge cache-badge notcached'; badge.textContent = `⬇️ ${st.progress}%`; }
+    }
+  });
+}
+
+// Tras enviar a debrid, va refrescando el progreso unos minutos.
+let statusTimer = null;
+function startStatusPolling() {
+  refreshDebridStatus();
+  clearInterval(statusTimer);
+  let n = 0;
+  statusTimer = setInterval(() => {
+    n += 1;
+    const onTab = document.querySelector('.panel[data-panel="buscador"]').classList.contains('active');
+    if (n > 60 || !onTab) { clearInterval(statusTimer); return; }
+    refreshDebridStatus();
+  }, 6000);
 }
 
 async function doSearch() {
@@ -347,12 +392,14 @@ async function doSearch() {
     }
     info.textContent = `${data.results.length} resultado(s), ordenados con el castellano primero.`;
     data.results.forEach((r) => container.appendChild(resultCard(r)));
+    refreshDebridStatus(); // refleja lo que ya esté en debrid (progreso/cacheado)
   } catch (err) {
     container.innerHTML = '';
     info.textContent = '✗ ' + err.message;
   }
 }
 
+document.getElementById('refreshStatusBtn').addEventListener('click', refreshDebridStatus);
 document.getElementById('searchBtn').addEventListener('click', doSearch);
 document.getElementById('searchInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') doSearch();

@@ -87,6 +87,15 @@ export class RealDebrid {
     return body; // { download, filename, filesize, ... }
   }
 
+  /** Lista los torrents de la cuenta (con estado y progreso). */
+  async listTorrents() {
+    const { ok, status, body } = await requestJson(`${BASE}/torrents`, {
+      headers: this.headers(),
+    });
+    if (!ok) throw new Error(`/torrents falló (HTTP ${status})`);
+    return Array.isArray(body) ? body : [];
+  }
+
   /** Borra un torrent de la cuenta. */
   async deleteTorrent(id) {
     await request(`${BASE}/torrents/delete/${id}`, {
