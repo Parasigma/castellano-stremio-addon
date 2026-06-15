@@ -156,9 +156,8 @@ New-Shortcut (Join-Path $startup 'Tunel Addon Castellano.lnk') (Join-Path $Insta
 if (-not $SkipFlaresolverr -and (Test-Path (Join-Path $fsDir 'flaresolverr.exe'))) {
   New-Shortcut (Join-Path $startup 'FlareSolverr.lnk') (Join-Path $fsDir 'flaresolverr.exe') '' $fsDir $null
 }
-# Accesos en el escritorio.
-New-Shortcut (Join-Path $desktop 'Iniciar Addon Castellano.lnk') (Join-Path $InstallDir 'iniciar.bat') '' $InstallDir $null
-New-Shortcut (Join-Path $desktop 'Tunel (para TV).lnk') (Join-Path $InstallDir 'tunel.bat') '' $InstallDir $null
+# Acceso PRINCIPAL en el escritorio: arranca todo de una vez.
+New-Shortcut (Join-Path $desktop 'Arrancar Addon Castellano.lnk') (Join-Path $InstallDir 'ARRANCAR-TODO.bat') '' $InstallDir $null
 New-Shortcut (Join-Path $desktop 'Dashboard Addon (web).lnk') 'http://localhost:7000' '' $null $null
 Ok "Accesos directos creados (inicio automático + escritorio)"
 
@@ -175,8 +174,8 @@ Write-Host @"
 Carpeta de la app: $InstallDir
 
 SIGUIENTES PASOS:
-  1) Arranca el addon: doble clic en 'Iniciar Addon Castellano' (escritorio)
-     o ejecuta  iniciar.bat  en la carpeta.
+  1) Doble clic en 'Arrancar Addon Castellano' (escritorio): arranca TODO
+     (Jackett, FlareSolverr, addon y tunel) y abre el panel.
   2) Abre el panel:  http://localhost:7000
   3) Pestaña 'Servidores debrid' -> pega tus tokens de Real Debrid / TorBox.
   4) Pestaña 'Indexadores' -> Jackett ya está en http://127.0.0.1:9117
