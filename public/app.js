@@ -107,8 +107,9 @@ async function loadConfig() {
   document.getElementById('dl_path').value = c.download.path;
   document.getElementById('dl_maxConcurrent').value = c.download.maxConcurrent;
 
-  // https
+  // https + túnel
   document.getElementById('https_enabled').checked = !!(c.server && c.server.https && c.server.https.enabled);
+  document.getElementById('tunnel_enabled').checked = !!(c.server && c.server.tunnel && c.server.tunnel.enabled);
 }
 
 // --- guardado ------------------------------------------------------------
@@ -145,6 +146,7 @@ function buildPatch() {
     },
     server: {
       https: { enabled: document.getElementById('https_enabled').checked },
+      tunnel: { enabled: document.getElementById('tunnel_enabled').checked },
     },
   };
 }
@@ -455,6 +457,26 @@ async function loadNetwork() {
     }).join('<br>');
     document.getElementById('netInfo').innerHTML =
       `Puerto ${n.port}. IPs detectadas en este PC:<br>${lines || '—'}`;
+
+    // Túnel público (HTTPS) para móvil/TV
+    const tn = n.tunnel || {};
+    const tInfo = document.getElementById('tunnelInfo');
+    if (tn.manifestUrl) {
+      document.getElementById('tunnelUrl').value = tn.manifestUrl;
+      document.getElementById('tunnelDeepLink').href = tn.deepLink || '#';
+      tInfo.innerHTML = '<span style="color:var(--ok)">✅ Túnel activo.</span> Instala esta URL en el Stremio del móvil/PC (con tu cuenta) y se sincronizará a la TV. Ojo: la URL cambia si reinicias el addon.';
+    } else {
+      document.getElementById('tunnelUrl').value = '';
+      if (!tn.enabled) tInfo.textContent = 'Túnel desactivado. Actívalo arriba, pulsa Guardar y reinicia el addon (iniciar.bat).';
+      else if (tn.status === 'starting') tInfo.textContent = '⏳ Generando la URL del túnel… (espera unos segundos, se actualiza solo)';
+      else if (tn.status === 'error') tInfo.textContent = '✗ ' + (tn.error || 'Error del túnel') + '. ¿Está cloudflared instalado? Reinstala con el instalador.';
+      else tInfo.textContent = 'Túnel activado, pero sin URL aún. Reinicia el addon y espera unos segundos.';
+      // si está arrancando, reintenta para mostrar la URL cuando aparezca
+      if (tn.enabled && (tn.status === 'starting' || !tn.status)) {
+        clearTimeout(window.__tnTimer);
+        window.__tnTimer = setTimeout(loadNetwork, 3000);
+      }
+    }
   } catch (err) {
     document.getElementById('netInfo').textContent = 'No se pudo cargar la info de red: ' + err.message;
   }
@@ -470,6 +492,7 @@ function copyFrom(inputId, btn) {
 document.getElementById('copyLocal').addEventListener('click', (e) => copyFrom('localUrl', e.target));
 document.getElementById('copyManifest').addEventListener('click', (e) => copyFrom('manifestUrl', e.target));
 document.getElementById('copyFirewall').addEventListener('click', (e) => copyFrom('firewallCmd', e.target));
+document.getElementById('copyTunnel').addEventListener('click', (e) => copyFrom('tunnelUrl', e.target));
 
 // --- init ----------------------------------------------------------------
 loadStatus();

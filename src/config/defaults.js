@@ -8,6 +8,10 @@ export const defaultConfig = {
     // HTTPS opcional (certificado autofirmado). Útil para el reproductor web de
     // Stremio en este mismo PC; en Smart TV se usa HTTP, que funciona en la LAN.
     https: { enabled: false, port: 7443 },
+    // Túnel público (Cloudflare) para instalar en Stremio desde el móvil/TV/
+    // internet con una URL HTTPS de verdad. Expone SOLO los endpoints de Stremio
+    // (no el panel ni los tokens), en un puerto aparte.
+    tunnel: { enabled: false, port: 7001 },
   },
 
   // Servidores debrid de pago (se rellenan desde el dashboard).

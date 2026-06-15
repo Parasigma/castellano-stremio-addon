@@ -314,7 +314,27 @@ La carpeta de descargas se ajusta en **Descargas → Carpeta de descargas**.
 - Si fallan por Cloudflare, instala **FlareSolverr** (ver 3.2).
 - En *Idioma y calidad*, deja **Castellano** arriba del todo.
 
+### Instalar en MÓVIL o Smart TV (la TV no gestiona addons)
+La app de Stremio en la **TV no permite añadir addons**: hay que instalarlos en
+el **móvil/PC con tu cuenta** y se **sincronizan** a la TV. Pero el móvil/PC
+**exigen HTTPS** (una URL `http://192.168...` se queda cargando y no instala).
+
+**Solución: activa el túnel HTTPS** (pestaña 📺 Instalar → sección ③):
+1. Marca **"Activar acceso por túnel (Cloudflare)"** → **Guardar configuración**.
+2. **Reinicia el addon** (`iniciar.bat`). A los pocos segundos, en esa sección
+   aparecerá una **URL pública HTTPS** (`https://....trycloudflare.com/manifest.json`).
+3. Inicia sesión en Stremio (móvil/PC) con **tu cuenta** e instala esa URL.
+4. Inicia sesión con la **misma cuenta** en la TV → el addon **se sincroniza** solo.
+
+Notas del túnel:
+- Expone **solo** los endpoints de Stremio (en un puerto aparte); tu panel y tus
+  **tokens NO se exponen**.
+- La URL **cambia cada vez que reinicias** el addon (es un túnel gratuito). Si
+  reinicias, vuelve a coger la URL nueva del panel y reinstala en Stremio.
+- Necesita `cloudflared` (el instalador lo incluye).
+
 ### Stremio dice «url not fetched» / no carga el addon
+- **Móvil/TV:** usa el **túnel HTTPS** (ver justo arriba). El `http` no vale ahí.
 - **En el mismo PC:** usa la URL **localhost** `http://127.0.0.1:7000/manifest.json`
   (sección ① del panel «Instalar»), no la de la IP. La app de Stremio exige HTTPS
   para direcciones que no sean `localhost`, por eso la IP por http falla en el

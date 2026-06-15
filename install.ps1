@@ -48,9 +48,10 @@ function Ensure-App($id, $name, $probeCmd) {
 }
 
 # --- 3. Prerrequisitos ---------------------------------------------------
-Ensure-App 'OpenJS.NodeJS.LTS' 'Node.js' 'node'
-Ensure-App 'Git.Git'           'Git'     'git'
-Ensure-App 'Jackett.Jackett'   'Jackett' $null
+Ensure-App 'OpenJS.NodeJS.LTS'   'Node.js'     'node'
+Ensure-App 'Git.Git'             'Git'         'git'
+Ensure-App 'Jackett.Jackett'     'Jackett'     $null
+Ensure-App 'Cloudflare.cloudflared' 'Cloudflared (túnel)' 'cloudflared'
 
 # Refrescar PATH para esta sesión (Node/Git recién instalados).
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +

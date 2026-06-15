@@ -8,6 +8,7 @@ import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
 import { getLanIps, getNetworkInterfaces } from '../tls.js';
+import { getTunnelInfo } from '../tunnel.js';
 
 export const VERSION = '1.1.0';
 
@@ -37,6 +38,17 @@ router.get('/network', (req, res) => {
     // Deep link que abre Stremio e instala el addon directamente.
     deepLink: `stremio://${primaryIp}:${port}/manifest.json`,
     webInstall: `https://web.stremio.com/#/addons?addon=${encodeURIComponent(manifestUrls[0])}`,
+    // Túnel público (HTTPS) para móvil/TV/internet.
+    tunnel: (() => {
+      const t = getTunnelInfo();
+      return {
+        enabled: !!(c.server.tunnel && c.server.tunnel.enabled),
+        status: t.status,
+        error: t.error,
+        manifestUrl: t.url ? `${t.url}/manifest.json` : null,
+        deepLink: t.url ? `stremio://${t.url.replace(/^https?:\/\//, '')}/manifest.json` : null,
+      };
+    })(),
     firewallCmd: `netsh advfirewall firewall add rule name="Stremio Addon Castellano" `
       + `dir=in action=allow protocol=TCP localport=${port}`,
   });

@@ -4,6 +4,8 @@
 import http from 'node:http';
 import https from 'node:https';
 import { createApp } from './server/app.js';
+import { createPublicApp } from './server/public-app.js';
+import { startTunnel } from './server/tunnel.js';
 import { loadConfig } from './config/store.js';
 import { initDownloads } from './download/manager.js';
 import { getLanIps, getCertificate } from './server/tls.js';
@@ -15,13 +17,22 @@ const app = createApp();
 // Reanuda descargas pendientes de sesiones anteriores.
 initDownloads();
 
-const { port, host, https: httpsCfg } = config.server;
+const { port, host, https: httpsCfg, tunnel: tunnelCfg } = config.server;
 const lanIp = getLanIps()[0] || '127.0.0.1';
 
 // Servidor HTTP (el que usa la Smart TV en la red local).
 http.createServer(app).listen(port, host, () => {
   printBanner();
 });
+
+// Túnel público opcional: servidor "solo-Stremio" en un puerto aparte + cloudflared.
+if (tunnelCfg && tunnelCfg.enabled) {
+  const publicPort = tunnelCfg.port || 7001;
+  http.createServer(createPublicApp()).listen(publicPort, '127.0.0.1', () => {
+    console.log(`  Servidor público (solo Stremio) en http://127.0.0.1:${publicPort}`);
+    startTunnel(publicPort);
+  });
+}
 
 // Servidor HTTPS opcional (para el reproductor web de Stremio en este PC).
 if (httpsCfg && httpsCfg.enabled) {

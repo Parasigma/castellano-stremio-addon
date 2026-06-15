@@ -98,6 +98,24 @@
       </div>
 
       <div class="card">
+        <h3>③ Para móvil / TV / fuera de casa (túnel HTTPS) ⭐</h3>
+        <p class="hint small">Stremio en móvil y TV <b>exige HTTPS</b>. Activa el túnel para obtener una URL <b>pública HTTPS</b> que puedes instalar desde el móvil/PC y se sincroniza a la TV. Expone <b>solo</b> los endpoints de Stremio; tus tokens NO se exponen.</p>
+        <label class="switch-row">
+          <input type="checkbox" id="tunnel_enabled" />
+          <span>Activar acceso por túnel (Cloudflare)</span>
+        </label>
+        <p class="hint small">Tras activar y <b>Guardar</b>, hay que <b>reiniciar el addon</b>. Necesita tener instalado <code>cloudflared</code> (el instalador lo incluye).</p>
+        <div class="search-box">
+          <input type="text" id="tunnelUrl" readonly placeholder="(se genera al activar y reiniciar el addon)" />
+          <button id="copyTunnel" class="mini-btn">📋 Copiar</button>
+        </div>
+        <div class="result-actions" style="margin-top:12px">
+          <a id="tunnelDeepLink" class="mini-btn" href="#">▶️ Instalar (abre Stremio)</a>
+        </div>
+        <p id="tunnelInfo" class="hint small" style="margin-top:10px"></p>
+      </div>
+
+      <div class="card">
         <h3>Firewall de Windows</h3>
         <p class="hint small">Si la TV no conecta, abre el puerto ejecutando esto en PowerShell <b>como administrador</b>:</p>
         <div class="search-box">
