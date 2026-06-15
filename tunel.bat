@@ -15,10 +15,19 @@ if errorlevel 1 (
 )
 
 echo ============================================================
-echo   Tunel publico para Stremio  -  NO CIERRES esta ventana
+echo   TUNEL ACTIVO  -  NO CIERRES ESTA VENTANA
 echo ============================================================
-echo  La URL aparecera abajo en unos segundos y tambien en el
-echo  panel del addon: http://localhost:7000  (pestana Instalar, seccion 3)
 echo.
-powershell -NoProfile -Command "cloudflared tunnel --no-autoupdate --url http://localhost:7001 2>&1 | Tee-Object -FilePath 'config\tunnel.log'"
+echo  - La URL aparecera en unos 10-20 segundos en el panel del addon:
+echo      http://localhost:7000   (pestana Instalar, seccion 3)
+echo  - Esta ventana se quedara aparentemente quieta: es NORMAL.
+echo  - Detalle/errores: abre el archivo  config\tunnel.log
+echo.
+echo Iniciando tunel...
+
+REM Salida limpia al log (sin envoltura de PowerShell). El addon lee la URL de aqui.
+cloudflared tunnel --no-autoupdate --url http://localhost:7001 > "config\tunnel.log" 2>&1
+
+echo.
+echo El tunel se ha cerrado. Revisa config\tunnel.log si hubo errores.
 pause
