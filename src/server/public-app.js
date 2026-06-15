@@ -9,6 +9,10 @@ import stremioRouter from './routes/stremio.js';
 export function createPublicApp() {
   const app = express();
 
+  // Va detrás del túnel de Cloudflare (HTTPS): respeta X-Forwarded-Proto para que
+  // los enlaces de reproducción se generen con https y Stremio los acepte.
+  app.set('trust proxy', true);
+
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');

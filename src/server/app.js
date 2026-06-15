@@ -14,6 +14,10 @@ const PUBLIC_DIR = path.resolve(__dirname, '../../public');
 export function createApp() {
   const app = express();
 
+  // Detrás de un proxy/túnel (Cloudflare), respeta X-Forwarded-Proto para que
+  // los enlaces se generen con https y Stremio pueda reproducirlos.
+  app.set('trust proxy', true);
+
   app.use(express.json({ limit: '1mb' }));
 
   // CORS abierto: Stremio (y el dashboard desde otra IP de la LAN) deben poder

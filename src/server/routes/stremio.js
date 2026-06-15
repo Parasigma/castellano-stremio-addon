@@ -7,6 +7,8 @@ import { encodeToken, resolveStream } from '../../engine/resolve.js';
 import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { matchLocalFiles, getFile } from '../../download/manager.js';
+import { getLanIps } from '../tls.js';
+import { loadConfig } from '../../config/store.js';
 
 const router = express.Router();
 
@@ -84,9 +86,13 @@ router.get('/stream/:type/:id.json', async (req, res) => {
 
     // 1) Streams locales (ya descargados/descargándose en el PC) — van primero,
     //    se reproducen al instante desde tu disco.
+    // Los ficheros locales se sirven por la IP de la red local (directo y rápido,
+    // sin pasar el vídeo por el túnel). Solo funciona viendo en la misma red.
+    const lanIp = getLanIps()[0] || '127.0.0.1';
+    const localBase = `http://${lanIp}:${loadConfig().server.port}`;
     const meta = await getMeta(type, imdbId);
     const localStreams = meta
-      ? matchLocalFiles({ name: meta.name, season, episode }).map((f) => localStream(f, baseUrl))
+      ? matchLocalFiles({ name: meta.name, season, episode }).map((f) => localStream(f, localBase))
       : [];
 
     // 2) Streams desde debrid/indexadores.
@@ -109,15 +115,25 @@ function localStream(f, baseUrl) {
   };
 }
 
+const MIME = {
+  mkv: 'video/x-matroska', mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime',
+  avi: 'video/x-msvideo', webm: 'video/webm', ts: 'video/mp2t', mpg: 'video/mpeg',
+  mpeg: 'video/mpeg', wmv: 'video/x-ms-wmv', flv: 'video/x-flv',
+};
+function mimeFor(name) {
+  const ext = (String(name).split('.').pop() || '').toLowerCase();
+  return MIME[ext] || 'application/octet-stream';
+}
+
 // --- streaming de ficheros locales (con soporte de range) ----------------
 router.get('/local/:infoHash/:fileIdx', (req, res) => {
   const info = getFile(req.params.infoHash.toLowerCase(), Number(req.params.fileIdx));
   if (!info) return res.status(404).send('Fichero no disponible (¿descarga aún sin metadatos?)');
 
-  const { file, length } = info;
+  const { file, length, name } = info;
   const range = req.headers.range;
   res.setHeader('Accept-Ranges', 'bytes');
-  res.setHeader('Content-Type', 'video/x-matroska');
+  res.setHeader('Content-Type', mimeFor(name));
 
   if (range) {
     const m = /bytes=(\d+)-(\d*)/.exec(range);
