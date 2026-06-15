@@ -203,6 +203,19 @@ button.primary:hover { filter: brightness(1.1); }
 .action-msg { font-size: 12px; color: var(--muted); }
 .spinner { color: var(--muted); font-size: 14px; padding: 20px 0; }
 
+/* Recuadro de ayuda desplegable */
+.help {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.help summary { cursor: pointer; color: var(--accent-2); font-size: 14px; }
+.help-body { margin-top: 10px; font-size: 13px; color: var(--text); }
+.help-body p { margin: 8px 0; }
+.help-body code, .help-body b { color: var(--text); }
+
 /* Descargas */
 .progress { height: 8px; background: #0b0d11; border-radius: 999px; overflow: hidden; margin: 8px 0; border: 1px solid var(--border); }
 .progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--ok)); transition: width .4s; }

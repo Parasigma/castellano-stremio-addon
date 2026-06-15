@@ -298,7 +298,18 @@ async function handleAction(act, r, btn, msg) {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
     const data = await resp.json();
-    msg.textContent = data.ok ? '✓ Hecho' : '✗ ' + (data.error || 'Error');
+    if (data.ok) {
+      if (act === 'torbox' || act === 'realdebrid') {
+        const prov = act === 'torbox' ? 'TorBox' : 'Real Debrid';
+        msg.textContent = `✓ Enviado a ${prov}. Cacheándose… aparecerá como ⚡ en Stremio al abrir ese título (ver "¿Dónde veo el contenido?" arriba).`;
+      } else if (act === 'download') {
+        msg.textContent = '✓ Descarga iniciada. Mira el progreso en la pestaña "Descargas".';
+      } else {
+        msg.textContent = '✓ Hecho';
+      }
+    } else {
+      msg.textContent = '✗ ' + (data.error || 'Error');
+    }
   } catch (err) {
     msg.textContent = '✗ ' + err.message;
   } finally {
