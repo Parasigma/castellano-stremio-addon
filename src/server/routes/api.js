@@ -7,6 +7,7 @@ import { manualSearch } from '../../engine/search.js';
 import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
+import { libraryInfo, rescan } from '../../library/scanner.js';
 import { getLanIps, getNetworkInterfaces } from '../tls.js';
 import { getTunnelInfo } from '../tunnel.js';
 
@@ -239,6 +240,16 @@ router.get('/debrid/status', async (req, res) => {
   }
 
   res.json({ ok: true, byHash });
+});
+
+// --- Biblioteca local -----------------------------------------------------
+router.get('/library', (req, res) => {
+  res.json({ ok: true, ...libraryInfo() });
+});
+
+router.post('/library/rescan', (req, res) => {
+  const count = rescan();
+  res.json({ ok: true, count });
 });
 
 // --- Descargas locales ---------------------------------------------------

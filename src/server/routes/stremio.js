@@ -1,12 +1,14 @@
 // Endpoints del protocolo Stremio: manifest, stream y resolve.
 
 import express from 'express';
+import fs from 'node:fs';
 import { searchStreams } from '../../engine/search.js';
 import { getMeta } from '../../engine/meta.js';
 import { encodeToken, resolveStream } from '../../engine/resolve.js';
 import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { matchLocalFiles, getFile } from '../../download/manager.js';
+import { findInLibrary, getLibraryFile } from '../../library/scanner.js';
 import { getLanIps } from '../tls.js';
 import { loadConfig } from '../../config/store.js';
 import { VERSION, ADDON_NAME } from '../../version.js';
@@ -111,6 +113,10 @@ router.get('/stream/:type/:id.json', async (req, res) => {
     const lanIp = getLanIps()[0] || '127.0.0.1';
     const localBase = `http://${lanIp}:${loadConfig().server.port}`;
     const meta = await getMeta(type, imdbId);
+    // Biblioteca local (vídeos que el usuario dejó en su carpeta) — van primero.
+    const libStreams = meta
+      ? findInLibrary({ name: meta.name, season, episode }).map((f) => libraryStream(f, localBase))
+      : [];
     const localStreams = meta
       ? matchLocalFiles({ name: meta.name, season, episode }).map((f) => localStream(f, localBase))
       : [];
@@ -119,7 +125,7 @@ router.get('/stream/:type/:id.json', async (req, res) => {
     const { torrents } = await searchStreams({ type, imdbId, season, episode });
     const debridStreams = torrents.map((t) => toStream(t, baseUrl, season, episode));
 
-    res.json({ streams: [...localStreams, ...debridStreams] });
+    res.json({ streams: [...libStreams, ...localStreams, ...debridStreams] });
   } catch (err) {
     console.error('[stream] error:', err.message);
     res.json({ streams: [] });
@@ -132,6 +138,15 @@ function localStream(f, baseUrl) {
     title: `${f.name}\n${(f.length / 1073741824).toFixed(2)} GB · en tu PC`,
     url: `${baseUrl}/local/${f.infoHash}/${f.fileIdx}`,
     behaviorHints: { bingeGroup: 'local' },
+  };
+}
+
+function libraryStream(f, baseUrl) {
+  return {
+    name: `CASTELLAR\n📁 Biblioteca`,
+    title: `${f.name}\n${(f.size / 1073741824).toFixed(2)} GB · en tu PC`,
+    url: `${baseUrl}/library/${f.id}`,
+    behaviorHints: { bingeGroup: 'biblioteca' },
   };
 }
 
@@ -166,6 +181,30 @@ router.get('/local/:infoHash/:fileIdx', (req, res) => {
   } else {
     res.setHeader('Content-Length', length);
     file.createReadStream().pipe(res);
+  }
+});
+
+// --- streaming de la biblioteca local (vídeos del usuario, con range) ----
+router.get('/library/:id', (req, res) => {
+  const f = getLibraryFile(req.params.id);
+  if (!f) return res.status(404).send('Fichero no encontrado en la biblioteca');
+
+  const total = f.size;
+  const range = req.headers.range;
+  res.setHeader('Accept-Ranges', 'bytes');
+  res.setHeader('Content-Type', mimeFor(f.name));
+
+  if (range) {
+    const m = /bytes=(\d+)-(\d*)/.exec(range);
+    const start = m ? parseInt(m[1], 10) : 0;
+    const end = m && m[2] ? parseInt(m[2], 10) : total - 1;
+    res.status(206);
+    res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+    res.setHeader('Content-Length', end - start + 1);
+    fs.createReadStream(f.path, { start, end }).pipe(res);
+  } else {
+    res.setHeader('Content-Length', total);
+    fs.createReadStream(f.path).pipe(res);
   }
 });
 

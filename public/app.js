@@ -104,9 +104,10 @@ async function loadConfig() {
   document.getElementById('minSeeders').value = c.ranking.minSeeders;
   document.getElementById('maxResults').value = c.ranking.maxResults;
 
-  // download
+  // download + biblioteca
   document.getElementById('dl_path').value = c.download.path;
   document.getElementById('dl_maxConcurrent').value = c.download.maxConcurrent;
+  document.getElementById('lib_path').value = (c.library && c.library.path) || '';
 
   // https + túnel
   document.getElementById('https_enabled').checked = !!(c.server && c.server.https && c.server.https.enabled);
@@ -145,6 +146,9 @@ function buildPatch() {
     download: {
       path: document.getElementById('dl_path').value.trim(),
       maxConcurrent: Number(document.getElementById('dl_maxConcurrent').value) || 3,
+    },
+    library: {
+      path: document.getElementById('lib_path').value.trim(),
     },
     server: {
       https: { enabled: document.getElementById('https_enabled').checked },
@@ -558,7 +562,29 @@ document.getElementById('copyManifest').addEventListener('click', (e) => copyFro
 document.getElementById('copyFirewall').addEventListener('click', (e) => copyFrom('firewallCmd', e.target));
 document.getElementById('copyTunnel').addEventListener('click', (e) => copyFrom('tunnelUrl', e.target));
 
+// --- biblioteca local ----------------------------------------------------
+async function loadLibraryInfo() {
+  try {
+    const r = await fetch('/api/library');
+    const d = await r.json();
+    const el = document.getElementById('lib_info');
+    if (!d.path) el.textContent = 'Sin carpeta configurada.';
+    else if (!d.exists) el.textContent = `⚠️ La carpeta no existe: ${d.path}`;
+    else el.textContent = `✓ ${d.count} vídeo(s) detectado(s) en la biblioteca.`;
+  } catch { /* noop */ }
+}
+document.getElementById('lib_rescan').addEventListener('click', async (e) => {
+  const el = document.getElementById('lib_info');
+  el.textContent = 'Re-escaneando…';
+  try {
+    const r = await fetch('/api/library/rescan', { method: 'POST' });
+    const d = await r.json();
+    el.textContent = `✓ ${d.count} vídeo(s) detectado(s).`;
+  } catch (err) { el.textContent = '✗ ' + err.message; }
+});
+
 // --- init ----------------------------------------------------------------
 loadStatus();
 loadConfig();
 loadNetwork();
+loadLibraryInfo();

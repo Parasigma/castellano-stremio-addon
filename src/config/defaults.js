@@ -51,6 +51,12 @@ export const defaultConfig = {
     path: '', // se autocompleta en el primer arranque a <userprofile>/Downloads/stremio
     maxConcurrent: 3,
   },
+
+  // Biblioteca local: carpeta donde TÚ dejas vídeos (descargados por tu cuenta).
+  // El addon los detecta y los ofrece como streams en Stremio.
+  library: {
+    path: '', // p.ej. D:\Series  (vacío = desactivado)
+  },
 };
 
 // Campos que contienen secretos y deben cifrarse en reposo / enmascararse en la UI.

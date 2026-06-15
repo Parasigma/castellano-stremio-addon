@@ -257,8 +257,27 @@
 
     <!-- DOWNLOAD -->
     <section class="panel" data-panel="download">
-      <h2>Descargas locales</h2>
-      <p class="hint">Descarga torrents a tu PC y reprodúcelos en la TV sin pasar por debrid.</p>
+      <h2>Descargas y biblioteca local</h2>
+      <p class="hint">Reproduce en la TV vídeos guardados en tu PC, sin pasar por debrid.</p>
+
+      <div class="card">
+        <h3>📁 Biblioteca local (tus propios vídeos)</h3>
+        <p class="hint small">Carpeta donde TÚ dejas los vídeos que descargues por tu cuenta. El addon los detecta y los ofrece en Stremio.</p>
+        <label>Carpeta de la biblioteca
+          <input type="text" id="lib_path" placeholder="Ej: D:\Series   (deja vacío para desactivar)" />
+        </label>
+        <div class="result-actions" style="margin-top:10px">
+          <button id="lib_rescan" class="mini-btn">🔄 Re-escanear ahora</button>
+          <span id="lib_info" class="hint small"></span>
+        </div>
+        <p class="hint small" style="margin-top:10px">
+          <b>Cómo nombrar los archivos</b> para que se detecten:<br>
+          • Series: que el nombre lleve la serie + temporada/episodio, p.ej.
+          <code>Modern Family S01E06 Castellano.mkv</code> o <code>Modern Family 1x06.mkv</code>.<br>
+          • También vale por carpetas: <code>Modern Family\Temporada 1\Modern Family S01E06.mkv</code>.<br>
+          • Películas: el nombre + año, p.ej. <code>Padre no hay mas que uno (2019).mkv</code>.
+        </p>
+      </div>
 
       <div class="card">
         <label>Carpeta de descargas
