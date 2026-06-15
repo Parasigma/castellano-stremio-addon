@@ -64,13 +64,20 @@ export class TorBox {
 
   /** Crea/añade un torrent por magnet. Devuelve data con torrent_id. */
   async createTorrent(magnet) {
-    const form = new URLSearchParams({ magnet });
+    // TorBox espera multipart/form-data. No fijamos Content-Type: fetch pone el
+    // boundary automáticamente al pasarle un FormData.
+    const form = new FormData();
+    form.append('magnet', magnet);
+    form.append('seed', '3'); // 3 = sembrar según ajustes de la cuenta
     const { ok, status, body } = await requestJson(`${BASE}/torrents/createtorrent`, {
       method: 'POST',
-      headers: this.headers({ 'Content-Type': 'application/x-www-form-urlencoded' }),
-      body: form.toString(),
+      headers: this.headers(),
+      body: form,
     });
-    if (!ok) throw new Error(`createtorrent falló (HTTP ${status})`);
+    if (!ok) {
+      const detail = body && (body.detail || body.error);
+      throw new Error(`TorBox createtorrent: ${detail || 'HTTP ' + status}`);
+    }
     return (body && body.data) || body;
   }
 

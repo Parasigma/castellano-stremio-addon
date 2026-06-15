@@ -19,7 +19,11 @@ const TRACKERS = [
  */
 export function buildMagnet(infoHash, name, extraTrackers = []) {
   if (!infoHash) return null;
-  const all = [...new Set([...(extraTrackers || []), ...TRACKERS])].filter(Boolean);
+  // Trackers reales primero, luego los públicos; sin duplicados y con un tope
+  // razonable (magnets enormes pueden dar problemas en algunas APIs).
+  const all = [...new Set([...(extraTrackers || []), ...TRACKERS])]
+    .filter(Boolean)
+    .slice(0, 25);
   const trackers = all.map((t) => `&tr=${encodeURIComponent(t)}`).join('');
   const dn = name ? `&dn=${encodeURIComponent(name)}` : '';
   return `magnet:?xt=urn:btih:${infoHash}${dn}${trackers}`;
