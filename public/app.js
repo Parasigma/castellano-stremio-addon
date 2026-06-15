@@ -466,15 +466,19 @@ async function loadNetwork() {
     if (tn.manifestUrl) {
       document.getElementById('tunnelUrl').value = tn.manifestUrl;
       document.getElementById('tunnelDeepLink').href = tn.deepLink || '#';
-      tInfo.innerHTML = '<span style="color:var(--ok)">✅ Túnel activo.</span> Instala esta URL en el Stremio del móvil/PC (con tu cuenta) y se sincronizará a la TV. Ojo: la URL cambia si reinicias el addon.';
+      tInfo.innerHTML = '<span style="color:var(--ok)">✅ Túnel activo.</span> Instala esta URL en el Stremio del móvil/PC (con tu cuenta) y se sincronizará a la TV. Mientras <b>tunel.bat</b> siga abierto, esta URL <b>no cambia</b> aunque reinicies el addon.';
     } else {
       document.getElementById('tunnelUrl').value = '';
-      if (!tn.enabled) tInfo.textContent = 'Túnel desactivado. Actívalo arriba, pulsa Guardar y reinicia el addon (iniciar.bat).';
-      else if (tn.status === 'starting') tInfo.textContent = '⏳ Generando la URL del túnel… (espera unos segundos, se actualiza solo)';
-      else if (tn.status === 'error') tInfo.textContent = '✗ ' + (tn.error || 'Error del túnel') + '. ¿Está cloudflared instalado? Reinstala con el instalador.';
-      else tInfo.textContent = 'Túnel activado, pero sin URL aún. Reinicia el addon y espera unos segundos.';
-      // si está arrancando, reintenta para mostrar la URL cuando aparezca
-      if (tn.enabled && (tn.status === 'starting' || !tn.status)) {
+      if (!tn.enabled) {
+        tInfo.innerHTML = 'Túnel desactivado. Actívalo arriba, pulsa <b>Guardar</b>, reinicia el addon (iniciar.bat) y ejecuta <b>tunel.bat</b>.';
+      } else if (tn.status === 'starting') {
+        tInfo.textContent = '⏳ Abriendo el túnel… espera unos segundos (se actualiza solo).';
+      } else if (tn.status === 'error') {
+        tInfo.textContent = '✗ ' + (tn.error || 'Error del túnel');
+      } else {
+        tInfo.innerHTML = '▶️ Ejecuta <b>tunel.bat</b> (doble clic, deja la ventana abierta). La URL aparecerá aquí en unos segundos.';
+      }
+      if (tn.enabled && tn.status !== 'error') {
         clearTimeout(window.__tnTimer);
         window.__tnTimer = setTimeout(loadNetwork, 3000);
       }

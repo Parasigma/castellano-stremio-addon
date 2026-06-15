@@ -5,7 +5,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { createApp } from './server/app.js';
 import { createPublicApp } from './server/public-app.js';
-import { startTunnel } from './server/tunnel.js';
+import { getTunnelInfo } from './server/tunnel.js';
 import { loadConfig } from './config/store.js';
 import { initDownloads } from './download/manager.js';
 import { getLanIps, getCertificate } from './server/tls.js';
@@ -25,12 +25,16 @@ http.createServer(app).listen(port, host, () => {
   printBanner();
 });
 
-// Túnel público opcional: servidor "solo-Stremio" en un puerto aparte + cloudflared.
+// Túnel público opcional: servidor "solo-Stremio" en un puerto aparte.
+// El túnel (cloudflared) se ejecuta APARTE con tunel.bat, para que su URL sea
+// estable aunque reinicies el addon.
 if (tunnelCfg && tunnelCfg.enabled) {
   const publicPort = tunnelCfg.port || 7001;
   http.createServer(createPublicApp()).listen(publicPort, '127.0.0.1', () => {
     console.log(`  Servidor público (solo Stremio) en http://127.0.0.1:${publicPort}`);
-    startTunnel(publicPort);
+    const t = getTunnelInfo();
+    if (t.url) console.log(`  Túnel activo: ${t.url}/manifest.json`);
+    else console.log('  ⚠️  Ejecuta  tunel.bat  para abrir el túnel público (URL para la TV).');
   });
 }
 

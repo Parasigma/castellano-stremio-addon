@@ -150,13 +150,15 @@ function New-Shortcut($lnkPath, $target, $args, $workDir, $iconPath) {
 $startup = [Environment]::GetFolderPath('Startup')
 $desktop = [Environment]::GetFolderPath('Desktop')
 
-# Inicio automático del addon y de FlareSolverr.
+# Inicio automático del addon, el túnel y FlareSolverr.
 New-Shortcut (Join-Path $startup 'Addon Castellano.lnk') (Join-Path $InstallDir 'iniciar.bat') '' $InstallDir $null
+New-Shortcut (Join-Path $startup 'Tunel Addon Castellano.lnk') (Join-Path $InstallDir 'tunel.bat') '' $InstallDir $null
 if (-not $SkipFlaresolverr -and (Test-Path (Join-Path $fsDir 'flaresolverr.exe'))) {
   New-Shortcut (Join-Path $startup 'FlareSolverr.lnk') (Join-Path $fsDir 'flaresolverr.exe') '' $fsDir $null
 }
 # Accesos en el escritorio.
 New-Shortcut (Join-Path $desktop 'Iniciar Addon Castellano.lnk') (Join-Path $InstallDir 'iniciar.bat') '' $InstallDir $null
+New-Shortcut (Join-Path $desktop 'Tunel (para TV).lnk') (Join-Path $InstallDir 'tunel.bat') '' $InstallDir $null
 New-Shortcut (Join-Path $desktop 'Dashboard Addon (web).lnk') 'http://localhost:7000' '' $null $null
 Ok "Accesos directos creados (inicio automático + escritorio)"
 

@@ -1,73 +1,38 @@
-// Gestiona un túnel de Cloudflare (cloudflared) para exponer el servidor público
-// "solo-Stremio" con una URL HTTPS de verdad, accesible desde el móvil/TV/internet.
+// Gestión del túnel de Cloudflare (cloudflared).
 //
-// Usa "quick tunnels" (gratis, sin cuenta): la URL es https://<aleatorio>.trycloudflare.com
-// OJO: esa URL CAMBIA cada vez que se reinicia el addon. El dashboard muestra la actual.
+// El túnel se ejecuta como un proceso INDEPENDIENTE (tunel.bat), no desde el addon.
+// Ventaja: la URL pública se mantiene ESTABLE aunque reinicies el addon (solo
+// cambia si cierras el túnel). El addon simplemente LEE la URL del log que escribe
+// tunel.bat (config/tunnel.log).
 
-import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-let tunnelUrl = null;
-let proc = null;
-let status = 'off'; // off | starting | running | error
-let lastError = null;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOG = path.resolve(__dirname, '../../config/tunnel.log');
 
-const URL_RE = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/i;
-
-export function getTunnelInfo() {
-  return { status, url: tunnelUrl, error: lastError };
-}
+const URL_RE = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/gi;
 
 /**
- * Arranca cloudflared apuntando al puerto local indicado.
- * @param {number} localPort
+ * Lee la URL pública actual del túnel desde el log que escribe tunel.bat.
+ * @returns {{status:string, url:string|null, error:string|null}}
  */
-export function startTunnel(localPort) {
-  if (proc) return; // ya arrancado
-  status = 'starting';
-  lastError = null;
-
-  const args = ['tunnel', '--no-autoupdate', '--url', `http://localhost:${localPort}`];
-
+export function getTunnelInfo() {
   try {
-    proc = spawn('cloudflared', args, { windowsHide: true });
-  } catch (e) {
-    status = 'error';
-    lastError = 'cloudflared no está instalado';
-    console.error('[tunnel] no se pudo lanzar cloudflared:', e.message);
-    return;
-  }
-
-  const onData = (buf) => {
-    const text = buf.toString();
-    const m = text.match(URL_RE);
-    if (m && !tunnelUrl) {
-      tunnelUrl = m[0];
-      status = 'running';
-      console.log(`\n  🌍 Túnel público (para móvil/TV/internet):`);
-      console.log(`     ${tunnelUrl}/manifest.json\n`);
+    if (!fs.existsSync(LOG)) {
+      return { status: 'off', url: null, error: null };
     }
-  };
-
-  proc.stdout.on('data', onData);
-  proc.stderr.on('data', onData); // cloudflared loguea por stderr
-
-  proc.on('error', (e) => {
-    status = 'error';
-    lastError = e.code === 'ENOENT' ? 'cloudflared no está instalado' : e.message;
-    console.error('[tunnel] error:', lastError);
-    proc = null;
-  });
-
-  proc.on('exit', (code) => {
-    if (status !== 'error') status = 'off';
-    tunnelUrl = null;
-    proc = null;
-    if (code) console.error(`[tunnel] cloudflared terminó (código ${code})`);
-  });
-}
-
-export function stopTunnel() {
-  if (proc) { try { proc.kill(); } catch { /* noop */ } proc = null; }
-  tunnelUrl = null;
-  status = 'off';
+    // La URL aparece al inicio del log; leemos solo los primeros 256 KB.
+    const fd = fs.openSync(LOG, 'r');
+    const buf = Buffer.alloc(262144);
+    const n = fs.readSync(fd, buf, 0, buf.length, 0);
+    fs.closeSync(fd);
+    const txt = buf.toString('utf8', 0, n);
+    const matches = txt.match(URL_RE);
+    const url = matches && matches.length ? matches[matches.length - 1] : null;
+    return { status: url ? 'running' : 'starting', url, error: null };
+  } catch (e) {
+    return { status: 'error', url: null, error: e.message };
+  }
 }
