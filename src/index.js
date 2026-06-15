@@ -52,7 +52,7 @@ if (httpsCfg && httpsCfg.enabled) {
 function printBanner() {
   const line = '─'.repeat(58);
   console.log(`\n${line}`);
-  console.log(`  🎬  Addon Castellano para Stremio  ·  v${VERSION}`);
+  console.log(`  🎬  CASTELLAR  ·  Addon castellano para Stremio  ·  v${VERSION}`);
   console.log(line);
   console.log('  Dashboard (config, buscador y descargas):');
   console.log(`    → http://localhost:${port}`);

@@ -9,16 +9,16 @@ import { LANG_LABEL } from '../../engine/language.js';
 import { matchLocalFiles, getFile } from '../../download/manager.js';
 import { getLanIps } from '../tls.js';
 import { loadConfig } from '../../config/store.js';
+import { VERSION, ADDON_NAME } from '../../version.js';
 
 const router = express.Router();
 
 const MANIFEST = {
   id: 'org.castellano.debrid.addon',
-  version: '1.1.0',
-  name: 'Castellano (Debrid)',
-  description: 'Addon centrado en castellano (doblado y VOSE) con Real Debrid, '
-    + 'TorBox e indexadores Jackett/Prowlarr. Prioriza el español de España.',
-  logo: 'https://dl.strem.io/addon-logo.png',
+  version: VERSION,
+  name: ADDON_NAME,
+  description: 'CASTELLAR · Addon centrado en castellano (doblado y VOSE) con '
+    + 'Real Debrid, TorBox e indexadores Jackett/Prowlarr. Prioriza el español de España.',
   resources: ['stream'],
   types: ['movie', 'series'],
   idPrefixes: ['tt'],
@@ -26,8 +26,28 @@ const MANIFEST = {
   behaviorHints: { configurable: true, configurationRequired: false },
 };
 
+// Logo SVG: bandera de España + botón de play + nombre.
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#1b2030"/><stop offset="1" stop-color="#0c0e14"/>
+  </linearGradient></defs>
+  <rect width="256" height="256" rx="52" fill="url(#b)"/>
+  <rect x="46" y="58" width="164" height="28" rx="6" fill="#c60b1e"/>
+  <rect x="46" y="86" width="164" height="46" fill="#ffc400"/>
+  <rect x="46" y="132" width="164" height="28" rx="6" fill="#c60b1e"/>
+  <polygon points="115,90 158,109 115,128" fill="#1b2030"/>
+  <text x="128" y="206" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="800" letter-spacing="1.5" fill="#fff" text-anchor="middle">CASTELLAR</text>
+</svg>`;
+
+router.get('/logo.svg', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(LOGO_SVG);
+});
+
 router.get('/manifest.json', (req, res) => {
-  res.json(MANIFEST);
+  const base = `${req.protocol}://${req.get('host')}`;
+  res.json({ ...MANIFEST, logo: `${base}/logo.svg` });
 });
 
 // --- helpers de presentación --------------------------------------------
@@ -62,7 +82,7 @@ export function toStream(t, baseUrl, season, episode) {
   ].filter(Boolean).join('  ');
 
   return {
-    name: `Castellano\n${lang} ${quality}`.trim(),
+    name: `CASTELLAR\n${lang} ${quality}`.trim(),
     title: `${t.title}\n${extras ? extras + '\n' : ''}${detailLine}`,
     url: `${baseUrl}/resolve/${token}`,
     behaviorHints: {
@@ -108,7 +128,7 @@ router.get('/stream/:type/:id.json', async (req, res) => {
 
 function localStream(f, baseUrl) {
   return {
-    name: `Castellano\n💾 Local`,
+    name: `CASTELLAR\n💾 Local`,
     title: `${f.name}\n${(f.length / 1073741824).toFixed(2)} GB · en tu PC`,
     url: `${baseUrl}/local/${f.infoHash}/${f.fileIdx}`,
     behaviorHints: { bingeGroup: 'local' },

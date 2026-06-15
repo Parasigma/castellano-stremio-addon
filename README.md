@@ -1,4 +1,4 @@
-# Castellano Stremio Addon
+# CASTELLAR — Addon castellano para Stremio
 
 Addon de Stremio centrado en contenido en **castellano** (doblado y subtitulado),
 con integración de **Real Debrid** y **TorBox**, indexadores **Jackett/Prowlarr**,

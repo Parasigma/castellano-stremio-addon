@@ -34,6 +34,7 @@ header {
 
 .brand { display: flex; align-items: center; gap: 14px; }
 .logo { font-size: 34px; }
+.logo-img { border-radius: 12px; display: block; }
 h1 { font-size: 20px; margin: 0; }
 .sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 

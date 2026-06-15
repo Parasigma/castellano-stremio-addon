@@ -10,7 +10,9 @@ import { addTorrent, listDownloads, removeDownload } from '../../download/manage
 import { getLanIps, getNetworkInterfaces } from '../tls.js';
 import { getTunnelInfo } from '../tunnel.js';
 
-export const VERSION = '1.1.0';
+import { VERSION } from '../../version.js';
+
+export { VERSION };
 
 const router = express.Router();
 

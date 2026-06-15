@@ -1,4 +1,4 @@
-# 📺 Addon Castellano para Stremio — Guía completa
+# 📺 CASTELLAR — Guía completa (addon castellano para Stremio)
 
 > Manual único y completo: qué es, cómo instalarlo paso a paso (incluido Jackett),
 > cómo usarlo, y solución de problemas.
