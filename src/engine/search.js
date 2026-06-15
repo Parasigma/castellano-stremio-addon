@@ -75,10 +75,17 @@ async function enrichInfoHashes(torrents) {
   return torrents;
 }
 
+// ¿Tiene audio en castellano? (castellano o dual). Para el modo "solo castellano".
+function esCastellano(t) {
+  const f = t.parsed.language.flags;
+  return !!(f && (f.castellano || f.dual));
+}
+
 /** Filtra por episodio (series), CAM y mínimo de seeders. */
 function filterTorrents(torrents, { type, season, episode }, ranking) {
   return torrents.filter((t) => {
     if (!t.infoHash && !t.magnet) return false; // sin forma de reproducirlo
+    if (ranking.onlyCastellano && !esCastellano(t)) return false;
     if (ranking.excludeCam && t.parsed.source === 'CAM') return false;
     if ((t.seeders || 0) < (ranking.minSeeders || 0)) return false;
 
@@ -182,6 +189,7 @@ export async function manualSearch(query) {
   // Solo aplicamos CAM y mínimo de seeders (sin filtro de temporada/episodio).
   torrents = torrents.filter((t) => {
     if (!t.infoHash && !t.magnet) return false;
+    if (config.ranking.onlyCastellano && !esCastellano(t)) return false;
     if (config.ranking.excludeCam && t.parsed.source === 'CAM') return false;
     if ((t.seeders || 0) < (config.ranking.minSeeders || 0)) return false;
     return true;

@@ -38,6 +38,10 @@ export const defaultConfig = {
     // Códecs preferidos (los primeros puntúan más).
     preferCodecs: ['x265', 'x264'],
     excludeCam: true, // descarta CAM/TS/SCREENER
+    // Si está activo, solo muestra resultados con audio en castellano (Castellano
+    // o Dual). Oculta inglés, latino, VOSE y desconocidos. Ideal para que en la TV
+    // solo aparezca lo doblado al castellano.
+    onlyCastellano: false,
     minSeeders: 0,
     maxResults: 30,
   },

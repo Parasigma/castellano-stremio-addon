@@ -99,6 +99,7 @@ async function loadConfig() {
   // ranking
   renderSortable(document.getElementById('languageList'), c.ranking.languagePriority, LANG_LABELS);
   renderSortable(document.getElementById('qualityList'), c.ranking.qualityPriority, null);
+  document.getElementById('onlyCastellano').checked = !!c.ranking.onlyCastellano;
   document.getElementById('excludeCam').checked = c.ranking.excludeCam;
   document.getElementById('minSeeders').value = c.ranking.minSeeders;
   document.getElementById('maxResults').value = c.ranking.maxResults;
@@ -136,6 +137,7 @@ function buildPatch() {
     ranking: {
       languagePriority: readSortable(document.getElementById('languageList')),
       qualityPriority: readSortable(document.getElementById('qualityList')),
+      onlyCastellano: document.getElementById('onlyCastellano').checked,
       excludeCam: document.getElementById('excludeCam').checked,
       minSeeders: Number(document.getElementById('minSeeders').value) || 0,
       maxResults: Number(document.getElementById('maxResults').value) || 30,
