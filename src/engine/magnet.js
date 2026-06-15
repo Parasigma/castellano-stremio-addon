@@ -10,10 +10,17 @@ const TRACKERS = [
   'udp://opentracker.i2p.rocks:6969/announce',
 ];
 
-/** Construye un magnet a partir de un infohash (y nombre opcional). */
-export function buildMagnet(infoHash, name) {
+/**
+ * Construye un magnet a partir de un infohash. Incluye los trackers reales que
+ * se le pasen (los del .torrent original, donde están los peers) + los públicos.
+ * @param {string} infoHash
+ * @param {string} [name]
+ * @param {string[]} [extraTrackers] trackers reales del torrent (announce)
+ */
+export function buildMagnet(infoHash, name, extraTrackers = []) {
   if (!infoHash) return null;
-  const trackers = TRACKERS.map((t) => `&tr=${encodeURIComponent(t)}`).join('');
+  const all = [...new Set([...(extraTrackers || []), ...TRACKERS])].filter(Boolean);
+  const trackers = all.map((t) => `&tr=${encodeURIComponent(t)}`).join('');
   const dn = name ? `&dn=${encodeURIComponent(name)}` : '';
   return `magnet:?xt=urn:btih:${infoHash}${dn}${trackers}`;
 }

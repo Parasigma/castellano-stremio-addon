@@ -31,7 +31,9 @@ export async function resolveInfoHash(url, { maxRedirects = 6, timeout = 12000 }
         const parsed = await Promise.resolve(parseTorrent(r.body));
         if (parsed && parsed.infoHash) {
           const ih = String(parsed.infoHash).toLowerCase();
-          return { infoHash: ih, magnet: buildMagnet(ih, parsed.name) };
+          // Conservamos los trackers reales del .torrent (ahí están los peers).
+          const trackers = Array.isArray(parsed.announce) ? parsed.announce : [];
+          return { infoHash: ih, magnet: buildMagnet(ih, parsed.name, trackers) };
         }
       } catch { /* no era un .torrent válido */ }
       return null;
