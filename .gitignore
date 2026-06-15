@@ -4,5 +4,7 @@ config/secret.key
 config/tls-cert.json
 config/downloads.json
 downloads/
+flaresolverr/
 *.log
+actualizar.log
 .DS_Store

@@ -86,7 +86,7 @@ Set-Location $InstallDir
 # --- 5. Dependencias del addon -------------------------------------------
 Info "Instalando dependencias del addon (npm install)..."
 $npm = Find-Npm
-& $npm install --no-fund --no-audit | Out-Null
+& $npm install --no-fund --no-audit --omit=optional | Out-Null
 Ok "Dependencias instaladas"
 
 # --- 6. FlareSolverr (opcional, para trackers con Cloudflare) ------------
