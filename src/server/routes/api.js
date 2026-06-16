@@ -7,7 +7,8 @@ import { manualSearch } from '../../engine/search.js';
 import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
-import { libraryInfo, rescan } from '../../library/scanner.js';
+import { libraryInfo, rescan, listAll } from '../../library/scanner.js';
+import { convert, getJobs, ffmpegAvailable } from '../../library/converter.js';
 import { getLanIps, getNetworkInterfaces } from '../tls.js';
 import { getTunnelInfo } from '../tunnel.js';
 
@@ -259,6 +260,28 @@ router.get('/library', (req, res) => {
 router.post('/library/rescan', (req, res) => {
   const count = rescan();
   res.json({ ok: true, count });
+});
+
+// Lista todos los vídeos de la biblioteca (para el conversor del panel).
+router.get('/library/list', (req, res) => {
+  res.json({ ok: true, videos: listAll() });
+});
+
+// --- Conversor a MP4 (para iPad) -----------------------------------------
+router.get('/convert', async (req, res) => {
+  res.json({ ok: true, ffmpeg: await ffmpegAvailable(), jobs: getJobs() });
+});
+
+router.post('/convert/:id', async (req, res) => {
+  if (!(await ffmpegAvailable())) {
+    return res.status(200).json({ ok: false, error: 'ffmpeg no está instalado. Vuelve a ejecutar el instalador (INSTALAR.bat).' });
+  }
+  try {
+    const job = await convert(req.params.id);
+    res.json({ ok: true, job });
+  } catch (err) {
+    res.status(200).json({ ok: false, error: String(err.message || err) });
+  }
 });
 
 // --- Descargas locales ---------------------------------------------------

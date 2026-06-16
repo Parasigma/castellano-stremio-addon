@@ -22,6 +22,7 @@
   <main>
     <nav class="tabs">
       <button class="tab active" data-tab="buscador">🔎 Buscador</button>
+      <button class="tab" data-tab="reproductor">🎬 Reproductor</button>
       <button class="tab" data-tab="instalar">📺 Instalar en Stremio</button>
       <button class="tab" data-tab="debrid">Servidores debrid</button>
       <button class="tab" data-tab="indexers">Indexadores</button>
@@ -71,6 +72,39 @@
       <div id="searchResults" class="results"></div>
     </section>
 
+    <!-- REPRODUCTOR -->
+    <section class="panel" data-panel="reproductor">
+      <h2>Reproductor privado</h2>
+      <p class="hint">Una web con tus vídeos de la biblioteca, protegida por contraseña, para verlos desde el móvil/iPad/PC en cualquier sitio.</p>
+
+      <div class="card">
+        <h3>🔐 Acceso</h3>
+        <label>Contraseña del reproductor
+          <input type="password" id="player_password" placeholder="Pon una contraseña" autocomplete="off" />
+        </label>
+        <p class="hint small">Tras <b>Guardar configuración</b>:</p>
+        <div class="result-actions" style="margin-bottom:10px">
+          <button id="openPlayer" class="primary">▶️ Abrir reproductor aquí</button>
+        </div>
+        <p class="hint small">Para verlo <b>desde fuera</b> (requiere túnel activo), comparte esta URL + la contraseña:</p>
+        <div class="search-box">
+          <input type="text" id="playerUrl" readonly />
+          <button id="copyPlayer" class="mini-btn">📋 Copiar</button>
+        </div>
+        <p id="playerInfo" class="hint small" style="margin-top:8px"></p>
+      </div>
+
+      <div class="card">
+        <h3>🎬 Convertir a MP4 (para iPad/móvil)</h3>
+        <p class="hint small">Los <b>MKV</b> no se ven con sonido en el iPad. Conviértelos a <b>MP4 (H.264 + audio AAC)</b> y se verán con sonido. El archivo original no se borra; se crea uno nuevo "(iPad).mp4".</p>
+        <div class="result-actions" style="margin-bottom:10px">
+          <button id="loadConvBtn" class="mini-btn">🔄 Cargar vídeos de la biblioteca</button>
+          <span id="ffmpegInfo" class="hint small"></span>
+        </div>
+        <div id="convList" class="results"></div>
+      </div>
+    </section>
+
     <!-- INSTALAR -->
     <section class="panel" data-panel="instalar">
       <h2>Instalar en Stremio</h2>
@@ -118,20 +152,6 @@
           <a id="tunnelDeepLink" class="mini-btn" href="#">▶️ Instalar (abre Stremio)</a>
         </div>
         <p id="tunnelInfo" class="hint small" style="margin-top:10px"></p>
-      </div>
-
-      <div class="card">
-        <h3>📱 Reproductor privado (ver desde fuera, p.ej. iPad) ⭐</h3>
-        <p class="hint small">Una página web con TUS vídeos de la biblioteca, <b>protegida por contraseña</b>, para que tu mujer (o quien quieras) los vea desde cualquier sitio. Requiere el <b>túnel activo</b> (sección ③).</p>
-        <label>Contraseña del reproductor
-          <input type="password" id="player_password" placeholder="Pon una contraseña" autocomplete="off" />
-        </label>
-        <p class="hint small">Tras <b>Guardar</b>, comparte esta URL + la contraseña con quien quieras:</p>
-        <div class="search-box">
-          <input type="text" id="playerUrl" readonly />
-          <button id="copyPlayer" class="mini-btn">📋 Copiar</button>
-        </div>
-        <p id="playerInfo" class="hint small" style="margin-top:8px"></p>
       </div>
 
       <div class="card">

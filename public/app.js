@@ -604,6 +604,86 @@ document.getElementById('lib_rescan').addEventListener('click', async (e) => {
   } catch (err) { el.textContent = '✗ ' + err.message; }
 });
 
+// --- reproductor + conversor ---------------------------------------------
+document.getElementById('openPlayer').addEventListener('click', () => window.open('/player', '_blank'));
+
+function updateConvCard(el, job) {
+  const s = el.querySelector('.conv-status');
+  const btn = el.querySelector('[data-conv]');
+  if (!s) return;
+  if (job.status === 'converting') { if (btn) btn.disabled = true; s.textContent = `⏳ Convirtiendo… ${job.progress}%`; }
+  else if (job.status === 'done') { if (btn) btn.disabled = true; s.innerHTML = '<span style="color:var(--ok)">✅ Hecho. Pulsa "Cargar vídeos" para ver el MP4.</span>'; }
+  else if (job.status === 'error') { if (btn) btn.disabled = false; s.innerHTML = `<span style="color:var(--accent)">✗ ${job.error || 'error'}</span>`; }
+}
+
+async function loadConvList() {
+  const info = document.getElementById('ffmpegInfo');
+  const list = document.getElementById('convList');
+  list.innerHTML = '<div class="spinner">Cargando…</div>';
+  try {
+    const vids = (await (await fetch('/api/library/list')).json()).videos || [];
+    const conv = await (await fetch('/api/convert')).json();
+    info.textContent = conv.ffmpeg ? '✓ ffmpeg listo' : '✗ ffmpeg no instalado (reinstala con INSTALAR.bat)';
+    const jobsById = {};
+    (conv.jobs || []).forEach((j) => { jobsById[j.id] = j; });
+    list.innerHTML = '';
+    if (!vids.length) {
+      list.innerHTML = '<p class="hint small">No hay vídeos. Configura la carpeta de biblioteca en la pestaña Descargas.</p>';
+      return;
+    }
+    vids.forEach((v) => {
+      const isMp4 = /\.mp4$/i.test(v.name);
+      const el = document.createElement('div');
+      el.className = 'result';
+      el.dataset.convid = v.id;
+      const action = isMp4
+        ? '<span class="badge cached">✓ ya es MP4</span>'
+        : `<button class="mini-btn" data-conv="${v.id}">🎬 Convertir a MP4</button>`;
+      el.innerHTML = `<div class="result-title">${escapeHtml(v.name)}</div>
+        <div class="result-actions">${action}<span class="conv-status hint small"></span></div>`;
+      list.appendChild(el);
+      if (jobsById[v.id]) updateConvCard(el, jobsById[v.id]);
+    });
+    list.querySelectorAll('[data-conv]').forEach((b) => b.addEventListener('click', () => startConvert(b.dataset.conv)));
+  } catch (e) {
+    list.innerHTML = `<p class="hint small">Error: ${e.message}</p>`;
+  }
+}
+
+async function startConvert(id) {
+  const el = document.querySelector(`.result[data-convid="${id}"]`);
+  const s = el && el.querySelector('.conv-status');
+  if (s) s.textContent = 'Iniciando…';
+  try {
+    const d = await (await fetch('/api/convert/' + id, { method: 'POST' })).json();
+    if (!d.ok) { if (s) s.innerHTML = `<span style="color:var(--accent)">✗ ${d.error}</span>`; return; }
+    startConvPolling();
+  } catch (e) { if (s) s.textContent = '✗ ' + e.message; }
+}
+
+let convTimer = null;
+function startConvPolling() {
+  clearInterval(convTimer);
+  convTimer = setInterval(async () => {
+    if (!document.querySelector('.panel[data-panel="reproductor"]').classList.contains('active')) {
+      clearInterval(convTimer); return;
+    }
+    try {
+      const conv = await (await fetch('/api/convert')).json();
+      let active = false;
+      (conv.jobs || []).forEach((j) => {
+        const el = document.querySelector(`.result[data-convid="${j.id}"]`);
+        if (el) updateConvCard(el, j);
+        if (j.status === 'converting') active = true;
+      });
+      if (!active) clearInterval(convTimer);
+    } catch (e) { /* noop */ }
+  }, 2000);
+}
+
+document.getElementById('loadConvBtn').addEventListener('click', loadConvList);
+document.querySelector('.tab[data-tab="reproductor"]').addEventListener('click', loadConvList);
+
 // --- init ----------------------------------------------------------------
 loadStatus();
 loadConfig();
