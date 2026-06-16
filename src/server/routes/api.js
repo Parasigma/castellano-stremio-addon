@@ -8,7 +8,7 @@ import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
 import { libraryInfo, rescan, listAll } from '../../library/scanner.js';
-import { convert, getJobs, ffmpegAvailable, ffmpegPath } from '../../library/converter.js';
+import { enqueue, enqueueMany, getJobs, ffmpegAvailable, ffmpegPath } from '../../library/converter.js';
 import { getLanIps, getNetworkInterfaces } from '../tls.js';
 import { getTunnelInfo } from '../tunnel.js';
 
@@ -272,12 +272,22 @@ router.get('/convert', async (req, res) => {
   res.json({ ok: true, ffmpeg: await ffmpegAvailable(), ffmpegPath: ffmpegPath(), jobs: getJobs() });
 });
 
+// Encolar varios a la vez (selección múltiple / convertir todos).
+router.post('/convert/batch', async (req, res) => {
+  if (!(await ffmpegAvailable())) {
+    return res.status(200).json({ ok: false, error: 'ffmpeg no está instalado. Vuelve a ejecutar el instalador.' });
+  }
+  const ids = (req.body && req.body.ids) || [];
+  const n = enqueueMany(ids);
+  res.json({ ok: true, queued: n });
+});
+
 router.post('/convert/:id', async (req, res) => {
   if (!(await ffmpegAvailable())) {
     return res.status(200).json({ ok: false, error: 'ffmpeg no está instalado. Vuelve a ejecutar el instalador (INSTALAR.bat).' });
   }
   try {
-    const job = await convert(req.params.id);
+    const job = enqueue(req.params.id);
     res.json({ ok: true, job });
   } catch (err) {
     res.status(200).json({ ok: false, error: String(err.message || err) });

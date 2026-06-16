@@ -10,6 +10,8 @@ import { getLibraryFile } from './scanner.js';
 import { loadConfig } from '../config/store.js';
 
 const jobs = new Map(); // id -> { status, progress, output, name, error }
+const queue = [];       // ids pendientes de convertir (en orden)
+let running = false;    // hay una conversión en marcha
 let ffmpegOk = null;
 
 // --- localizar el ffmpeg MODERNO (el de winget/Gyan), no uno viejo del PATH ---
@@ -113,23 +115,53 @@ export function ffmpegPath() { return FFMPEG; }
 const AUDIO = ['-c:a', 'aac', '-strict', 'experimental', '-ac', '2', '-b:a', '192k', '-movflags', '+faststart'];
 const MAPS = ['-map', '0:v:0', '-map', '0:a:0?']; // 1er vídeo + 1er audio (opcional)
 
-/** Inicia la conversión a MP4 de un vídeo de la biblioteca. Devuelve el job. */
-export async function convert(id) {
+/** Añade un vídeo a la cola de conversión. Devuelve el job (status 'queued'). */
+export function enqueue(id) {
   const f = getLibraryFile(id);
   if (!f) throw new Error('Vídeo no encontrado en la biblioteca');
   if (/\.mp4$/i.test(f.path)) throw new Error('Ese vídeo ya es MP4');
-  const existing = jobs.get(id);
-  if (existing && existing.status === 'converting') return existing;
+  const j = jobs.get(id);
+  if (j && (j.status === 'queued' || j.status === 'converting')) return j; // ya está
+  jobs.set(id, { status: 'queued', progress: 0, output: null, name: f.name, error: null });
+  queue.push(id);
+  processQueue();
+  return jobs.get(id);
+}
+
+/** Encola varios; devuelve cuántos se han añadido. */
+export function enqueueMany(ids) {
+  let n = 0;
+  for (const id of ids || []) {
+    try { enqueue(id); n += 1; } catch { /* salta los que ya son mp4 o no existen */ }
+  }
+  return n;
+}
+
+async function processQueue() {
+  if (running) return;
+  running = true;
+  while (queue.length) {
+    const id = queue.shift();
+    const job = jobs.get(id);
+    if (!job || job.status !== 'queued') continue;
+    await runConversion(id, job);
+  }
+  running = false;
+}
+
+async function runConversion(id, job) {
+  const f = getLibraryFile(id);
+  if (!f) { job.status = 'error'; job.error = 'Vídeo no encontrado'; return; }
 
   const root = (loadConfig().library && loadConfig().library.path) || path.dirname(f.path);
   const mp4dir = path.join(root, 'MP4');
   try { fs.mkdirSync(mp4dir, { recursive: true }); } catch { /* ignora */ }
   const output = path.join(mp4dir, path.basename(f.path).replace(/\.[^.]+$/, '') + '.mp4');
+  job.output = output;
+  job.status = 'converting';
+  job.progress = 0;
 
   const { vcodec, duration } = await probe(f.path);
-  const job = { status: 'converting', progress: 0, output, name: f.name, error: null };
-  jobs.set(id, job);
-
   const onProgress = (m) => {
     if (!duration) return;
     const t = (+m[1]) * 3600 + (+m[2]) * 60 + parseFloat(m[3]);
@@ -137,27 +169,20 @@ export async function convert(id) {
   };
   const reencode = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21'];
 
-  (async () => {
-    let r;
-    if (vcodec === 'h264') {
-      // Rápido: copia el vídeo, solo convierte audio.
-      r = await runFfmpeg(['-y', '-i', f.path, ...MAPS, '-c:v', 'copy', ...AUDIO, output], onProgress);
-      if (r.code !== 0) { // si copiar no sirve, re-codifica
-        job.progress = 0;
-        r = await runFfmpeg(['-y', '-i', f.path, ...MAPS, ...reencode, ...AUDIO, output], onProgress);
-      }
-    } else {
-      r = await runFfmpeg(['-y', '-i', f.path, ...MAPS, ...reencode, ...AUDIO, output], onProgress);
-    }
-    if (r.code === 0) {
-      job.status = 'done';
-      job.progress = 100;
-    } else {
-      job.status = 'error';
-      job.error = r.error || lastError(r.tail) || `ffmpeg terminó con código ${r.code}`;
-      try { fs.unlinkSync(output); } catch { /* borra el fichero a medias */ }
-    }
-  })();
+  let r;
+  if (vcodec === 'h264') {
+    r = await runFfmpeg(['-y', '-i', f.path, ...MAPS, '-c:v', 'copy', ...AUDIO, output], onProgress);
+    if (r.code !== 0) { job.progress = 0; r = await runFfmpeg(['-y', '-i', f.path, ...MAPS, ...reencode, ...AUDIO, output], onProgress); }
+  } else {
+    r = await runFfmpeg(['-y', '-i', f.path, ...MAPS, ...reencode, ...AUDIO, output], onProgress);
+  }
 
-  return job;
+  if (r.code === 0) {
+    job.status = 'done';
+    job.progress = 100;
+  } else {
+    job.status = 'error';
+    job.error = r.error || lastError(r.tail) || `ffmpeg terminó con código ${r.code}`;
+    try { fs.unlinkSync(output); } catch { /* borra el fichero a medias */ }
+  }
 }

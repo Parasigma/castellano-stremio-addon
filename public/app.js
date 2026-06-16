@@ -613,7 +613,10 @@ function updateConvCard(el, job) {
   const bar = el.querySelector('.progress');
   const fill = el.querySelector('.progress > span');
   if (!s) return;
-  if (job.status === 'converting') {
+  if (job.status === 'queued') {
+    if (btn) btn.disabled = true;
+    s.textContent = '⏳ En cola…';
+  } else if (job.status === 'converting') {
     if (btn) btn.disabled = true;
     if (bar) bar.style.display = 'block';
     if (fill) fill.style.width = (job.progress || 0) + '%';
@@ -652,10 +655,11 @@ async function loadConvList() {
       const el = document.createElement('div');
       el.className = 'result';
       el.dataset.convid = v.id;
+      const cb = isMp4 ? '' : `<input type="checkbox" class="conv-check" data-id="${v.id}" style="margin-right:8px;vertical-align:middle" />`;
       const action = isMp4
         ? '<span class="badge cached">✓ ya es MP4</span>'
-        : `<button class="mini-btn" data-conv="${v.id}">🎬 Convertir a MP4</button>`;
-      el.innerHTML = `<div class="result-title">${escapeHtml(v.name)}</div>
+        : `<button class="mini-btn" data-conv="${v.id}">🎬 Convertir</button>`;
+      el.innerHTML = `<div class="result-title">${cb}${escapeHtml(v.name)}</div>
         <div class="progress" style="display:none"><span style="width:0%"></span></div>
         <div class="result-actions">${action}<span class="conv-status hint small"></span></div>`;
       list.appendChild(el);
@@ -700,6 +704,26 @@ function startConvPolling() {
 
 document.getElementById('loadConvBtn').addEventListener('click', loadConvList);
 document.querySelector('.tab[data-tab="reproductor"]').addEventListener('click', loadConvList);
+
+document.getElementById('convSelectAll').addEventListener('change', (e) => {
+  document.querySelectorAll('#convList .conv-check').forEach((c) => { c.checked = e.target.checked; });
+});
+
+document.getElementById('convSelectedBtn').addEventListener('click', async () => {
+  const ids = [...document.querySelectorAll('#convList .conv-check:checked')].map((c) => c.dataset.id);
+  const info = document.getElementById('convSelInfo');
+  if (!ids.length) { info.textContent = 'Marca al menos un vídeo (o usa "Seleccionar todos").'; return; }
+  info.textContent = `Encolando ${ids.length}…`;
+  try {
+    const d = await (await fetch('/api/convert/batch', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }),
+    })).json();
+    if (!d.ok) { info.textContent = '✗ ' + (d.error || 'Error'); return; }
+    info.textContent = `✓ ${d.queued} en cola. Se convierten de uno en uno.`;
+    document.getElementById('convSelectAll').checked = false;
+    startConvPolling();
+  } catch (e) { info.textContent = '✗ ' + e.message; }
+});
 
 // --- init ----------------------------------------------------------------
 loadStatus();
