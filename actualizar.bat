@@ -27,13 +27,9 @@ echo.
 echo [1/2] Descargando cambios desde GitHub...
 REM Evitar el error "dubious ownership" si la carpeta fue creada como administrador.
 git config --global --add safe.directory "*" >nul 2>&1
-git pull --ff-only
-if errorlevel 1 (
-  echo.
-  echo  AVISO: 'git pull' fallo. Intentando recuperar cambios locales...
-  git stash
-  git pull --ff-only
-)
+REM Forzar la actualizacion a la ultima version (la config esta en config\, que git ignora).
+git fetch origin
+git reset --hard origin/main
 echo.
 echo [2/2] Instalando dependencias...
 echo  ^(Los avisos amarillos "npm warn deprecated" son NORMALES, no son errores^)
