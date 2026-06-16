@@ -69,7 +69,9 @@ export function getJobs() {
   return [...jobs.entries()].map(([id, j]) => ({ id, ...j }));
 }
 
-const AUDIO = ['-c:a', 'aac', '-ac', '2', '-b:a', '192k', '-movflags', '+faststart'];
+// '-strict experimental' permite el codificador AAC nativo también en versiones
+// antiguas de ffmpeg (donde se considera "experimental"); en las nuevas no molesta.
+const AUDIO = ['-c:a', 'aac', '-strict', 'experimental', '-ac', '2', '-b:a', '192k', '-movflags', '+faststart'];
 const MAPS = ['-map', '0:v:0', '-map', '0:a:0?']; // 1er vídeo + 1er audio (opcional)
 
 /** Inicia la conversión a MP4 de un vídeo de la biblioteca. Devuelve el job. */
