@@ -14,7 +14,9 @@ param(
   [switch]$SkipFlaresolverr
 )
 
-$ErrorActionPreference = 'Stop'
+# 'Continue' (no 'Stop'): así la salida normal de git/winget por stderr no aborta
+# el instalador. Los errores críticos se gestionan con 'throw' explícito.
+$ErrorActionPreference = 'Continue'
 
 function Info($m) { Write-Host "`n==> $m" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "   OK  $m" -ForegroundColor Green }
@@ -71,14 +73,14 @@ function Find-Npm {
 # Evita el error "dubious ownership": como el instalador corre elevado, la
 # carpeta clonada queda en propiedad de Administradores; marcamos los repos como
 # seguros para que git pull funcione luego al ejecutarse como usuario normal.
-git config --global --add safe.directory '*' 2>$null
+git config --global --add safe.directory '*'
 
 # Fuerza la actualización del código a la última versión (evita que un pull
 # falle en silencio por cambios locales). La config del usuario está en config/
 # (ignorada por git), así que no se pierde nada.
 function Force-Update($dir) {
-  git -C $dir fetch origin 2>$null | Out-Null
-  git -C $dir reset --hard origin/main 2>$null | Out-Null
+  git -C $dir fetch origin | Out-Null
+  git -C $dir reset --hard origin/main | Out-Null
 }
 
 $here = $PSScriptRoot
