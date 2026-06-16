@@ -1,6 +1,6 @@
 {
   "name": "castellano-stremio-addon",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Addon de Stremio centrado en castellano con Real Debrid, TorBox, indexadores (Jackett/Prowlarr) y servidor de descargas local.",
   "type": "module",
   "main": "src/index.js",

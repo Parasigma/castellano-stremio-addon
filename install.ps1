@@ -73,21 +73,30 @@ function Find-Npm {
 # seguros para que git pull funcione luego al ejecutarse como usuario normal.
 git config --global --add safe.directory '*' 2>$null
 
-# Si se ejecuta dentro del propio repo, instala ahí; si no, clona.
+# Fuerza la actualización del código a la última versión (evita que un pull
+# falle en silencio por cambios locales). La config del usuario está en config/
+# (ignorada por git), así que no se pierde nada.
+function Force-Update($dir) {
+  git -C $dir fetch origin 2>$null | Out-Null
+  git -C $dir reset --hard origin/main 2>$null | Out-Null
+}
+
 $here = $PSScriptRoot
 if ($here -and (Test-Path (Join-Path $here 'package.json')) -and (Test-Path (Join-Path $here 'src\index.js'))) {
   $InstallDir = $here
-  if (Test-Path (Join-Path $here '.git')) { Info "Actualizando repo en $InstallDir"; git -C $InstallDir pull --ff-only | Out-Null }
-  Ok "Usando el código de $InstallDir"
+  if (Test-Path (Join-Path $here '.git')) { Info "Actualizando código en $InstallDir"; Force-Update $InstallDir }
 } elseif (Test-Path (Join-Path $InstallDir '.git')) {
-  Info "Actualizando repo existente en $InstallDir"
-  git -C $InstallDir pull --ff-only | Out-Null
-  Ok "Actualizado"
+  Info "Actualizando código en $InstallDir"
+  Force-Update $InstallDir
 } else {
   Info "Clonando el código en $InstallDir"
   git clone $RepoUrl $InstallDir | Out-Null
-  Ok "Clonado"
 }
+# Muestra la versión que ha quedado instalada.
+try {
+  $v = (Get-Content (Join-Path $InstallDir 'package.json') -Raw | ConvertFrom-Json).version
+  Ok "Código en la versión $v"
+} catch { Ok "Código preparado" }
 Set-Location $InstallDir
 
 # --- 5. Dependencias del addon -------------------------------------------
