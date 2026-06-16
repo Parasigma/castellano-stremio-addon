@@ -637,7 +637,9 @@ async function loadConvList() {
   try {
     const vids = (await (await fetch('/api/library/list')).json()).videos || [];
     const conv = await (await fetch('/api/convert')).json();
-    info.textContent = conv.ffmpeg ? '✓ ffmpeg listo' : '✗ ffmpeg no instalado (reinstala con INSTALAR.bat)';
+    info.textContent = conv.ffmpeg
+      ? `✓ ffmpeg listo (${conv.ffmpegPath})`
+      : '✗ ffmpeg no instalado (reinstala con INSTALAR.bat)';
     const jobsById = {};
     (conv.jobs || []).forEach((j) => { jobsById[j.id] = j; });
     list.innerHTML = '';

@@ -8,7 +8,7 @@ import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { addTorrent, listDownloads, removeDownload } from '../../download/manager.js';
 import { libraryInfo, rescan, listAll } from '../../library/scanner.js';
-import { convert, getJobs, ffmpegAvailable } from '../../library/converter.js';
+import { convert, getJobs, ffmpegAvailable, ffmpegPath } from '../../library/converter.js';
 import { getLanIps, getNetworkInterfaces } from '../tls.js';
 import { getTunnelInfo } from '../tunnel.js';
 
@@ -269,7 +269,7 @@ router.get('/library/list', (req, res) => {
 
 // --- Conversor a MP4 (para iPad) -----------------------------------------
 router.get('/convert', async (req, res) => {
-  res.json({ ok: true, ffmpeg: await ffmpegAvailable(), jobs: getJobs() });
+  res.json({ ok: true, ffmpeg: await ffmpegAvailable(), ffmpegPath: ffmpegPath(), jobs: getJobs() });
 });
 
 router.post('/convert/:id', async (req, res) => {

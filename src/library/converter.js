@@ -12,11 +12,48 @@ import { loadConfig } from '../config/store.js';
 const jobs = new Map(); // id -> { status, progress, output, name, error }
 let ffmpegOk = null;
 
+// --- localizar el ffmpeg MODERNO (el de winget/Gyan), no uno viejo del PATH ---
+function searchFile(dir, name, depth) {
+  if (depth < 0) return null;
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return null; }
+  for (const e of entries) {
+    if (e.isFile() && e.name.toLowerCase() === name.toLowerCase()) return path.join(dir, e.name);
+  }
+  for (const e of entries) {
+    if (e.isDirectory()) { const r = searchFile(path.join(dir, e.name), name, depth - 1); if (r) return r; }
+  }
+  return null;
+}
+
+function findExe(name) {
+  const exe = name + (process.platform === 'win32' ? '.exe' : '');
+  const local = process.env.LOCALAPPDATA;
+  const tries = [];
+  if (local) {
+    tries.push(path.join(local, 'Microsoft', 'WinGet', 'Links', exe));
+    const pkgs = path.join(local, 'Microsoft', 'WinGet', 'Packages');
+    try {
+      for (const d of fs.readdirSync(pkgs)) {
+        if (/Gyan\.FFmpeg/i.test(d)) {
+          const hit = searchFile(path.join(pkgs, d), exe, 3);
+          if (hit) tries.push(hit);
+        }
+      }
+    } catch { /* ignora */ }
+  }
+  for (const t of tries) { try { if (fs.existsSync(t)) return t; } catch { /* ignora */ } }
+  return name; // último recurso: el del PATH
+}
+
+const FFMPEG = findExe('ffmpeg');
+const FFPROBE = findExe('ffprobe');
+
 export function ffmpegAvailable() {
   if (ffmpegOk !== null) return Promise.resolve(ffmpegOk);
   return new Promise((resolve) => {
     let p;
-    try { p = spawn('ffmpeg', ['-version'], { windowsHide: true }); }
+    try { p = spawn(FFMPEG, ['-version'], { windowsHide: true }); }
     catch { ffmpegOk = false; return resolve(false); }
     p.on('error', () => { ffmpegOk = false; resolve(false); });
     p.on('exit', (c) => { ffmpegOk = c === 0; resolve(ffmpegOk); });
@@ -28,7 +65,7 @@ function probe(file) {
     let out = '';
     let p;
     try {
-      p = spawn('ffprobe', ['-v', 'error', '-show_entries',
+      p = spawn(FFPROBE, ['-v', 'error', '-show_entries',
         'format=duration:stream=codec_type,codec_name', '-of', 'json', file], { windowsHide: true });
     } catch { return resolve({}); }
     p.stdout.on('data', (d) => { out += d; });
@@ -46,7 +83,7 @@ function probe(file) {
 function runFfmpeg(args, onProgress) {
   return new Promise((resolve) => {
     let proc; let tail = '';
-    try { proc = spawn('ffmpeg', args, { windowsHide: true }); }
+    try { proc = spawn(FFMPEG, args, { windowsHide: true }); }
     catch { return resolve({ code: -1, error: 'No se pudo lanzar ffmpeg' }); }
     proc.stderr.on('data', (d) => {
       const s = d.toString();
@@ -68,6 +105,8 @@ function lastError(tail) {
 export function getJobs() {
   return [...jobs.entries()].map(([id, j]) => ({ id, ...j }));
 }
+
+export function ffmpegPath() { return FFMPEG; }
 
 // '-strict experimental' permite el codificador AAC nativo también en versiones
 // antiguas de ffmpeg (donde se considera "experimental"); en las nuevas no molesta.
