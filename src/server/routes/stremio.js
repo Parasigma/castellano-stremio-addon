@@ -8,7 +8,7 @@ import { encodeToken, resolveStream } from '../../engine/resolve.js';
 import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { matchLocalFiles, getFile } from '../../download/manager.js';
-import { findInLibrary, getLibraryFile } from '../../library/scanner.js';
+import { findInLibrary, getLibraryFile, listAll } from '../../library/scanner.js';
 import { getLanIps } from '../tls.js';
 import { loadConfig } from '../../config/store.js';
 import { VERSION, ADDON_NAME } from '../../version.js';
@@ -21,12 +21,23 @@ const MANIFEST = {
   name: ADDON_NAME,
   description: 'CASTELLAR · Addon centrado en castellano (doblado y VOSE) con '
     + 'Real Debrid, TorBox e indexadores Jackett/Prowlarr. Prioriza el español de España.',
-  resources: ['stream'],
-  types: ['movie', 'series'],
-  idPrefixes: ['tt'],
-  catalogs: [],
+  resources: [
+    'stream',
+    { name: 'catalog', types: ['castellar'] },
+    { name: 'meta', types: ['castellar'], idPrefixes: ['cast:'] },
+  ],
+  types: ['movie', 'series', 'castellar'],
+  idPrefixes: ['tt', 'cast:'],
+  catalogs: [
+    { type: 'castellar', id: 'biblioteca', name: 'CASTELLAR · Mi biblioteca' },
+  ],
   behaviorHints: { configurable: true, configurationRequired: false },
 };
+
+// Nombre legible a partir del nombre de fichero.
+function prettyName(name) {
+  return String(name || '').replace(/\.[^.]+$/, '').replace(/[._]+/g, ' ').trim();
+}
 
 // Logo SVG: bandera de España + botón de play + nombre.
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
@@ -50,6 +61,38 @@ router.get('/logo.svg', (req, res) => {
 router.get('/manifest.json', (req, res) => {
   const base = `${req.protocol}://${req.get('host')}`;
   res.json({ ...MANIFEST, logo: `${base}/logo.svg` });
+});
+
+// --- Catálogo "Mi biblioteca": sección propia con tus vídeos --------------
+router.get('/catalog/:type/:id.json', (req, res) => {
+  if (req.params.type !== 'castellar') return res.json({ metas: [] });
+  const base = `${req.protocol}://${req.get('host')}`;
+  const metas = listAll().map((v) => ({
+    id: `cast:${v.id}`,
+    type: 'castellar',
+    name: prettyName(v.name),
+    poster: `${base}/logo.svg`,
+    posterShape: 'square',
+  }));
+  res.json({ metas });
+});
+
+// Detalle (meta) de un elemento del catálogo.
+router.get('/meta/:type/:id.json', (req, res) => {
+  const base = `${req.protocol}://${req.get('host')}`;
+  const { id } = req.params;
+  if (!id.startsWith('cast:')) return res.json({ meta: {} });
+  const f = getLibraryFile(id.slice(5));
+  res.json({
+    meta: {
+      id,
+      type: 'castellar',
+      name: f ? prettyName(f.name) : id,
+      poster: `${base}/logo.svg`,
+      posterShape: 'square',
+      description: f ? f.name : '',
+    },
+  });
 });
 
 // --- helpers de presentación --------------------------------------------
@@ -96,6 +139,15 @@ export function toStream(t, baseUrl, season, episode) {
 // --- stream ---------------------------------------------------------------
 // id de película: tt1234567   ·   id de serie: tt1234567:1:5
 router.get('/stream/:type/:id.json', async (req, res) => {
+  // Vídeo de la biblioteca (catálogo propio): id 'cast:<fileId>'
+  if (req.params.id.startsWith('cast:')) {
+    const fileId = req.params.id.slice(5);
+    const f = getLibraryFile(fileId);
+    if (!f) return res.json({ streams: [] });
+    const lanIp = getLanIps()[0] || '127.0.0.1';
+    const url = `http://${lanIp}:${loadConfig().server.port}/library/${fileId}`;
+    return res.json({ streams: [{ name: 'CASTELLAR\n📁 Biblioteca', title: f.name, url, behaviorHints: { bingeGroup: 'biblioteca' } }] });
+  }
   const { type } = req.params;
   const [imdbId, seasonStr, episodeStr] = req.params.id.split(':');
   const season = seasonStr != null ? Number(seasonStr) : null;
