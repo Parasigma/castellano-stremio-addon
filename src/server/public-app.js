@@ -5,6 +5,7 @@
 
 import express from 'express';
 import stremioRouter from './routes/stremio.js';
+import playerRouter from './routes/player.js';
 
 export function createPublicApp() {
   const app = express();
@@ -21,10 +22,13 @@ export function createPublicApp() {
     next();
   });
 
-  // Solo el protocolo Stremio. Nada de /api ni de dashboard.
+  // Protocolo Stremio (manifest, stream, resolve, library, local).
   app.use('/', stremioRouter);
 
-  // Cualquier otra ruta: 404 (no exponemos nada más).
+  // Reproductor web privado (protegido por contraseña). Accesible por el túnel.
+  app.use('/player', playerRouter);
+
+  // Cualquier otra ruta: 404 (no exponemos panel ni configuración).
   app.use((req, res) => res.status(404).send('Not found'));
 
   return app;

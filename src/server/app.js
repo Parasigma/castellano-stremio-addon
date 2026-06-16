@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import apiRouter from './routes/api.js';
 import stremioRouter from './routes/stremio.js';
+import playerRouter from './routes/player.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../../public');
@@ -35,6 +36,9 @@ export function createApp() {
 
   // Protocolo Stremio (manifest, stream, resolve).
   app.use('/', stremioRouter);
+
+  // Reproductor web privado (con contraseña).
+  app.use('/player', playerRouter);
 
   // Dashboard estático.
   app.use('/', express.static(PUBLIC_DIR));

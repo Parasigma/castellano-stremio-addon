@@ -86,6 +86,17 @@ export function findInLibrary({ name, season, episode } = {}) {
   return out;
 }
 
+/** Lista TODOS los vídeos de la biblioteca (para el reproductor web). */
+export function listAll() {
+  ensureScanned();
+  const out = [];
+  for (const [id, f] of index) {
+    out.push({ id, name: path.basename(f.path), rel: f.rel, size: f.size });
+  }
+  out.sort((a, b) => a.rel.localeCompare(b.rel, 'es'));
+  return out;
+}
+
 /** Devuelve { path, size, name } de un fichero de la biblioteca por su id. */
 export function getLibraryFile(id) {
   ensureScanned();

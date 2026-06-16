@@ -52,6 +52,15 @@ router.get('/network', (req, res) => {
         deepLink: t.url ? `stremio://${t.url.replace(/^https?:\/\//, '')}/manifest.json` : null,
       };
     })(),
+    // Reproductor web privado (para ver la biblioteca desde fuera, con contraseña).
+    player: (() => {
+      const t = getTunnelInfo();
+      return {
+        configured: !!getSecret('player.password'),
+        localUrl: `${localUrl.replace('/manifest.json', '')}/player`,
+        remoteUrl: t.url ? `${t.url}/player` : null,
+      };
+    })(),
     firewallCmd: `netsh advfirewall firewall add rule name="Stremio Addon Castellano" `
       + `dir=in action=allow protocol=TCP localport=${port}`,
   });

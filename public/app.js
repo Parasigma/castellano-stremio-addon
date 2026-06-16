@@ -112,6 +112,11 @@ async function loadConfig() {
   // https + túnel
   document.getElementById('https_enabled').checked = !!(c.server && c.server.https && c.server.https.enabled);
   document.getElementById('tunnel_enabled').checked = !!(c.server && c.server.tunnel && c.server.tunnel.enabled);
+
+  // reproductor privado
+  document.getElementById('player_password').value = '';
+  document.getElementById('player_password').placeholder = (c.player && c.player.password)
+    ? '•••••••• (guardada)' : 'Pon una contraseña';
 }
 
 // --- guardado ------------------------------------------------------------
@@ -149,6 +154,9 @@ function buildPatch() {
     },
     library: {
       path: document.getElementById('lib_path').value.trim(),
+    },
+    player: {
+      password: tokenOrEmpty('player_password'),
     },
     server: {
       https: { enabled: document.getElementById('https_enabled').checked },
@@ -545,6 +553,18 @@ async function loadNetwork() {
         window.__tnTimer = setTimeout(loadNetwork, 3000);
       }
     }
+
+    // Reproductor privado
+    const pl = n.player || {};
+    document.getElementById('playerUrl').value = pl.remoteUrl || pl.localUrl || '';
+    const pinfo = document.getElementById('playerInfo');
+    if (!pl.configured) {
+      pinfo.textContent = 'Pon una contraseña arriba y pulsa Guardar para activarlo.';
+    } else if (!pl.remoteUrl) {
+      pinfo.innerHTML = '⚠️ Activa el túnel (sección ③) para usarlo desde fuera de casa. Ahora solo funciona en tu red local.';
+    } else {
+      pinfo.innerHTML = '<span style="color:var(--ok)">✓ Listo: abre esa URL en el iPad, mete la contraseña y a ver los vídeos.</span>';
+    }
   } catch (err) {
     document.getElementById('netInfo').textContent = 'No se pudo cargar la info de red: ' + err.message;
   }
@@ -561,6 +581,7 @@ document.getElementById('copyLocal').addEventListener('click', (e) => copyFrom('
 document.getElementById('copyManifest').addEventListener('click', (e) => copyFrom('manifestUrl', e.target));
 document.getElementById('copyFirewall').addEventListener('click', (e) => copyFrom('firewallCmd', e.target));
 document.getElementById('copyTunnel').addEventListener('click', (e) => copyFrom('tunnelUrl', e.target));
+document.getElementById('copyPlayer').addEventListener('click', (e) => copyFrom('playerUrl', e.target));
 
 // --- biblioteca local ----------------------------------------------------
 async function loadLibraryInfo() {

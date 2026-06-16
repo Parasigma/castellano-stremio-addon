@@ -121,6 +121,20 @@
       </div>
 
       <div class="card">
+        <h3>📱 Reproductor privado (ver desde fuera, p.ej. iPad) ⭐</h3>
+        <p class="hint small">Una página web con TUS vídeos de la biblioteca, <b>protegida por contraseña</b>, para que tu mujer (o quien quieras) los vea desde cualquier sitio. Requiere el <b>túnel activo</b> (sección ③).</p>
+        <label>Contraseña del reproductor
+          <input type="password" id="player_password" placeholder="Pon una contraseña" autocomplete="off" />
+        </label>
+        <p class="hint small">Tras <b>Guardar</b>, comparte esta URL + la contraseña con quien quieras:</p>
+        <div class="search-box">
+          <input type="text" id="playerUrl" readonly />
+          <button id="copyPlayer" class="mini-btn">📋 Copiar</button>
+        </div>
+        <p id="playerInfo" class="hint small" style="margin-top:8px"></p>
+      </div>
+
+      <div class="card">
         <h3>Firewall de Windows</h3>
         <p class="hint small">Si la TV no conecta, abre el puerto ejecutando esto en PowerShell <b>como administrador</b>:</p>
         <div class="search-box">

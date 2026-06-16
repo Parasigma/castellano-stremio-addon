@@ -57,6 +57,12 @@ export const defaultConfig = {
   library: {
     path: '', // p.ej. D:\Series  (vacío = desactivado)
   },
+
+  // Reproductor web privado (para ver la biblioteca desde fuera, con contraseña).
+  // Vacío = desactivado. Se sirve por el túnel en /player.
+  player: {
+    password: '',
+  },
 };
 
 // Campos que contienen secretos y deben cifrarse en reposo / enmascararse en la UI.
@@ -66,4 +72,5 @@ export const SECRET_FIELDS = [
   'debrid.torbox.token',
   'indexers.jackett.apiKey',
   'indexers.prowlarr.apiKey',
+  'player.password',
 ];
