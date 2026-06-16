@@ -9,6 +9,7 @@ import { ensureMagnet } from '../../engine/magnet.js';
 import { LANG_LABEL } from '../../engine/language.js';
 import { matchLocalFiles, getFile } from '../../download/manager.js';
 import { findInLibrary, getLibraryFile, listAll } from '../../library/scanner.js';
+import { resolveCatalogMeta } from '../../library/posters.js';
 import { getLanIps } from '../tls.js';
 import { loadConfig } from '../../config/store.js';
 import { VERSION, ADDON_NAME } from '../../version.js';
@@ -64,32 +65,44 @@ router.get('/manifest.json', (req, res) => {
 });
 
 // --- Catálogo "Mi biblioteca": sección propia con tus vídeos --------------
-router.get('/catalog/:type/:id.json', (req, res) => {
+router.get('/catalog/:type/:id.json', async (req, res) => {
   if (req.params.type !== 'castellar') return res.json({ metas: [] });
   const base = `${req.protocol}://${req.get('host')}`;
-  const metas = listAll().map((v) => ({
-    id: `cast:${v.id}`,
-    type: 'castellar',
-    name: prettyName(v.name),
-    poster: `${base}/logo.svg`,
-    posterShape: 'square',
-  }));
-  res.json({ metas });
+  try {
+    const metas = await Promise.all(listAll().map(async (v) => {
+      const r = await resolveCatalogMeta(v);
+      return {
+        id: `cast:${v.id}`,
+        type: 'castellar',
+        name: r.name || prettyName(v.name),
+        poster: r.poster || `${base}/logo.svg`,
+        posterShape: r.posterShape || 'square',
+      };
+    }));
+    res.json({ metas });
+  } catch (err) {
+    console.error('[catalog] error:', err.message);
+    res.json({ metas: [] });
+  }
 });
 
 // Detalle (meta) de un elemento del catálogo.
-router.get('/meta/:type/:id.json', (req, res) => {
+router.get('/meta/:type/:id.json', async (req, res) => {
   const base = `${req.protocol}://${req.get('host')}`;
   const { id } = req.params;
   if (!id.startsWith('cast:')) return res.json({ meta: {} });
-  const f = getLibraryFile(id.slice(5));
+  const fileId = id.slice(5);
+  const f = getLibraryFile(fileId);
+  let r = { poster: null, posterShape: 'square', name: null, background: null };
+  if (f) { try { r = await resolveCatalogMeta({ id: fileId, name: f.name, rel: f.name }); } catch { /* usa el fallback */ } }
   res.json({
     meta: {
       id,
       type: 'castellar',
-      name: f ? prettyName(f.name) : id,
-      poster: `${base}/logo.svg`,
-      posterShape: 'square',
+      name: (f && r.name) || (f ? prettyName(f.name) : id),
+      poster: r.poster || `${base}/logo.svg`,
+      posterShape: r.posterShape || 'square',
+      background: r.background || undefined,
       description: f ? f.name : '',
     },
   });
