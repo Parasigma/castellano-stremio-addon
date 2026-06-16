@@ -33,6 +33,7 @@ function walk(dir, root, depth) {
     } else if (VIDEO.test(e.name)) {
       let size = 0;
       try { size = fs.statSync(full).size; } catch { /* ignora */ }
+      if (size <= 0) continue; // salta ficheros vacíos (conversiones a medias)
       const id = crypto.createHash('sha1').update(full).digest('hex').slice(0, 16);
       index.set(id, { path: full, size, rel: path.relative(root, full) });
     }

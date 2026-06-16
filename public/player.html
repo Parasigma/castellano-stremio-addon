@@ -62,6 +62,9 @@
 
     <!-- BIBLIOTECA -->
     <section id="lib" class="hidden">
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;color:var(--muted);font-size:14px;cursor:pointer">
+        <input type="checkbox" id="onlyMp4" checked /> Mostrar solo vídeos listos (MP4, con sonido)
+      </label>
       <div id="libInfo" class="note" style="margin-bottom:14px"></div>
       <div id="grid" class="grid"></div>
     </section>
@@ -98,27 +101,34 @@
       } catch (e) { $('loginErr').textContent = 'No se pudo conectar.'; }
     }
 
+    let allVideos = [];
+    function renderGrid() {
+      const onlyMp4 = $('onlyMp4').checked;
+      const vids = onlyMp4 ? allVideos.filter((v) => /\.mp4$/i.test(v.name)) : allVideos;
+      const grid = $('grid'); grid.innerHTML = '';
+      if (!allVideos.length) { $('libInfo').textContent = 'No hay vídeos en la biblioteca todavía.'; return; }
+      if (!vids.length) { $('libInfo').textContent = 'No hay vídeos en MP4 todavía. Convierte alguno desde el panel, o desmarca la casilla.'; return; }
+      $('libInfo').textContent = `${vids.length} vídeo(s) disponibles.`;
+      vids.forEach((v) => {
+        const el = document.createElement('div');
+        el.className = 'vid';
+        el.innerHTML = `<div class="ico">🎬</div><div class="name">${v.name.replace(/</g, '&lt;')}</div><div class="meta">${fmtSize(v.size)}</div>`;
+        el.addEventListener('click', () => playVideo(v.id, v.name));
+        grid.appendChild(el);
+      });
+    }
+
     async function loadList() {
       try {
         const r = await fetch(`${API}/list?t=${encodeURIComponent(token)}`);
         if (r.status === 401) { show('login'); return; }
         const d = await r.json();
-        const grid = $('grid'); grid.innerHTML = '';
-        if (!d.videos || !d.videos.length) {
-          $('libInfo').textContent = 'No hay vídeos en la biblioteca todavía.';
-        } else {
-          $('libInfo').textContent = `${d.videos.length} vídeo(s) disponibles.`;
-          d.videos.forEach((v) => {
-            const el = document.createElement('div');
-            el.className = 'vid';
-            el.innerHTML = `<div class="ico">🎬</div><div class="name">${v.name.replace(/</g, '&lt;')}</div><div class="meta">${fmtSize(v.size)}</div>`;
-            el.addEventListener('click', () => playVideo(v.id, v.name));
-            grid.appendChild(el);
-          });
-        }
+        allVideos = d.videos || [];
+        renderGrid();
         show('lib');
       } catch (e) { show('login'); }
     }
+    document.addEventListener('change', (e) => { if (e.target && e.target.id === 'onlyMp4') renderGrid(); });
 
     function playVideo(id, name) {
       $('playTitle').textContent = name;

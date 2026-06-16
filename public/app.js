@@ -610,10 +610,24 @@ document.getElementById('openPlayer').addEventListener('click', () => window.ope
 function updateConvCard(el, job) {
   const s = el.querySelector('.conv-status');
   const btn = el.querySelector('[data-conv]');
+  const bar = el.querySelector('.progress');
+  const fill = el.querySelector('.progress > span');
   if (!s) return;
-  if (job.status === 'converting') { if (btn) btn.disabled = true; s.textContent = `⏳ Convirtiendo… ${job.progress}%`; }
-  else if (job.status === 'done') { if (btn) btn.disabled = true; s.innerHTML = '<span style="color:var(--ok)">✅ Hecho. Pulsa "Cargar vídeos" para ver el MP4.</span>'; }
-  else if (job.status === 'error') { if (btn) btn.disabled = false; s.innerHTML = `<span style="color:var(--accent)">✗ ${job.error || 'error'}</span>`; }
+  if (job.status === 'converting') {
+    if (btn) btn.disabled = true;
+    if (bar) bar.style.display = 'block';
+    if (fill) fill.style.width = (job.progress || 0) + '%';
+    s.textContent = `⏳ Convirtiendo… ${job.progress}%`;
+  } else if (job.status === 'done') {
+    if (btn) btn.disabled = true;
+    if (bar) bar.style.display = 'block';
+    if (fill) fill.style.width = '100%';
+    s.innerHTML = '<span style="color:var(--ok)">✅ Hecho. Pulsa "Cargar vídeos" para verlo en MP4.</span>';
+  } else if (job.status === 'error') {
+    if (btn) btn.disabled = false;
+    if (bar) bar.style.display = 'none';
+    s.innerHTML = `<span style="color:var(--accent)">✗ ${job.error || 'error'}</span>`;
+  }
 }
 
 async function loadConvList() {
@@ -640,6 +654,7 @@ async function loadConvList() {
         ? '<span class="badge cached">✓ ya es MP4</span>'
         : `<button class="mini-btn" data-conv="${v.id}">🎬 Convertir a MP4</button>`;
       el.innerHTML = `<div class="result-title">${escapeHtml(v.name)}</div>
+        <div class="progress" style="display:none"><span style="width:0%"></span></div>
         <div class="result-actions">${action}<span class="conv-status hint small"></span></div>`;
       list.appendChild(el);
       if (jobsById[v.id]) updateConvCard(el, jobsById[v.id]);
