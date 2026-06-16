@@ -12,6 +12,10 @@ export const defaultConfig = {
     // internet con una URL HTTPS de verdad. Expone SOLO los endpoints de Stremio
     // (no el panel ni los tokens), en un puerto aparte.
     tunnel: { enabled: false, port: 7001 },
+    // URL pública FIJA (p.ej. de Tailscale Funnel o un dominio propio). Si se
+    // rellena, el addon la usa para el reproductor/manifest en vez de la URL
+    // cambiante de Cloudflare. Ej: https://mi-pc.mi-red.ts.net
+    publicUrl: '',
   },
 
   // Servidores debrid de pago (se rellenan desde el dashboard).

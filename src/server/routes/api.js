@@ -42,24 +42,25 @@ router.get('/network', (req, res) => {
     // Deep link que abre Stremio e instala el addon directamente.
     deepLink: `stremio://${primaryIp}:${port}/manifest.json`,
     webInstall: `https://web.stremio.com/#/addons?addon=${encodeURIComponent(manifestUrls[0])}`,
-    // Túnel público (HTTPS) para móvil/TV/internet.
-    tunnel: (() => {
-      const t = getTunnelInfo();
+    // Base pública: URL fija (Tailscale/dominio) si existe; si no, la del túnel Cloudflare.
+    ...(() => {
+      const tinfo = getTunnelInfo();
+      const fixed = (c.server.publicUrl || '').replace(/\/+$/, '');
+      const remoteBase = fixed || tinfo.url || null;
       return {
-        enabled: !!(c.server.tunnel && c.server.tunnel.enabled),
-        status: t.status,
-        error: t.error,
-        manifestUrl: t.url ? `${t.url}/manifest.json` : null,
-        deepLink: t.url ? `stremio://${t.url.replace(/^https?:\/\//, '')}/manifest.json` : null,
-      };
-    })(),
-    // Reproductor web privado (para ver la biblioteca desde fuera, con contraseña).
-    player: (() => {
-      const t = getTunnelInfo();
-      return {
-        configured: !!getSecret('player.password'),
-        localUrl: `${localUrl.replace('/manifest.json', '')}/player`,
-        remoteUrl: t.url ? `${t.url}/player` : null,
+        publicUrl: fixed || '',
+        tunnel: {
+          enabled: !!(c.server.tunnel && c.server.tunnel.enabled),
+          status: fixed ? 'fixed' : tinfo.status,
+          error: tinfo.error,
+          manifestUrl: remoteBase ? `${remoteBase}/manifest.json` : null,
+          deepLink: remoteBase ? `stremio://${remoteBase.replace(/^https?:\/\//, '')}/manifest.json` : null,
+        },
+        player: {
+          configured: !!getSecret('player.password'),
+          localUrl: `${localUrl.replace('/manifest.json', '')}/player`,
+          remoteUrl: remoteBase ? `${remoteBase}/player` : null,
+        },
       };
     })(),
     firewallCmd: `netsh advfirewall firewall add rule name="Stremio Addon Castellano" `

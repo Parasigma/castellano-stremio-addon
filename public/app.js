@@ -117,6 +117,7 @@ async function loadConfig() {
   document.getElementById('player_password').value = '';
   document.getElementById('player_password').placeholder = (c.player && c.player.password)
     ? '•••••••• (guardada)' : 'Pon una contraseña';
+  document.getElementById('public_url').value = (c.server && c.server.publicUrl) || '';
 }
 
 // --- guardado ------------------------------------------------------------
@@ -161,6 +162,7 @@ function buildPatch() {
     server: {
       https: { enabled: document.getElementById('https_enabled').checked },
       tunnel: { enabled: document.getElementById('tunnel_enabled').checked },
+      publicUrl: document.getElementById('public_url').value.trim(),
     },
   };
 }
