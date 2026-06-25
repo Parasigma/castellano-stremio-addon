@@ -40,6 +40,15 @@ function prettyName(name) {
   return String(name || '').replace(/\.[^.]+$/, '').replace(/[._]+/g, ' ').trim();
 }
 
+// Evita que Stremio se quede con una versión vieja/vacía del manifest o del
+// catálogo: le pedimos que NO cachee y revalide en cada apertura. Así no hace
+// falta reinstalar el addon cuando la biblioteca aún no estaba lista al abrir.
+function noStore(res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+}
+
 // Logo SVG: bandera de España + botón de play + nombre.
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
   <defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
@@ -61,11 +70,13 @@ router.get('/logo.svg', (req, res) => {
 
 router.get('/manifest.json', (req, res) => {
   const base = `${req.protocol}://${req.get('host')}`;
+  noStore(res);
   res.json({ ...MANIFEST, logo: `${base}/logo.svg` });
 });
 
 // --- Catálogo "Mi biblioteca": sección propia con tus vídeos --------------
 router.get('/catalog/:type/:id.json', async (req, res) => {
+  noStore(res);
   if (req.params.type !== 'castellar') return res.json({ metas: [] });
   const base = `${req.protocol}://${req.get('host')}`;
   try {
@@ -88,6 +99,7 @@ router.get('/catalog/:type/:id.json', async (req, res) => {
 
 // Detalle (meta) de un elemento del catálogo.
 router.get('/meta/:type/:id.json', async (req, res) => {
+  noStore(res);
   const base = `${req.protocol}://${req.get('host')}`;
   const { id } = req.params;
   if (!id.startsWith('cast:')) return res.json({ meta: {} });

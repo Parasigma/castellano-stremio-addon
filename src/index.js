@@ -8,6 +8,7 @@ import { createPublicApp } from './server/public-app.js';
 import { getTunnelInfo } from './server/tunnel.js';
 import { loadConfig } from './config/store.js';
 import { initDownloads } from './download/manager.js';
+import { rescan } from './library/scanner.js';
 import { getLanIps, getCertificate } from './server/tls.js';
 import { VERSION } from './server/routes/api.js';
 
@@ -16,6 +17,15 @@ const app = createApp();
 
 // Reanuda descargas pendientes de sesiones anteriores.
 initDownloads();
+
+// Escanea la biblioteca al arrancar para que el catálogo "Mi biblioteca" esté
+// listo en cuanto Stremio lo pida (evita que cachee una lista vacía en frío).
+try {
+  const n = rescan();
+  console.log(`  Biblioteca: ${n} vídeo(s) indexados.`);
+} catch (err) {
+  console.error('  No se pudo escanear la biblioteca:', err.message);
+}
 
 const { port, host, https: httpsCfg, tunnel: tunnelCfg } = config.server;
 const lanIp = getLanIps()[0] || '127.0.0.1';
